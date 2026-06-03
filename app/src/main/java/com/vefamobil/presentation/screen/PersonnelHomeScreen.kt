@@ -1,6 +1,5 @@
 package com.vefamobil.presentation.screen
 
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -42,6 +41,7 @@ import com.vefamobil.model.Announcement
 import com.vefamobil.model.TaskItem
 import com.vefamobil.model.TaskItemStatus
 import com.vefamobil.presentation.AnnouncementUiState
+import com.vefamobil.presentation.CallHelper
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -145,9 +145,11 @@ fun PersonnelHomeScreen(
                     PersonnelTaskRow(
                         taskItem = taskItem,
                         onCallClick = {
-                            Toast
-                                .makeText(context, "Arama entegrasyonu sonraki aşamada eklenecek.", Toast.LENGTH_SHORT)
-                                .show()
+                            CallHelper.openCallScreen(
+                                context = context,
+                                phone1 = taskItem.phone1,
+                                phone2 = taskItem.phone2,
+                            )
                         },
                         onDoneClick = {
                             taskItems.updateTaskItem(taskItem.id) {

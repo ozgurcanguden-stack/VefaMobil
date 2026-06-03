@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 fun ManagerHomeScreen(
     @Suppress("UNUSED_PARAMETER")
     displayName: String,
+    onHouseholdsClick: () -> Unit,
 ) {
     val context = LocalContext.current
     val toastMessage = "Bu ekran sonraki aşamada eklenecek."
@@ -101,9 +102,13 @@ fun ManagerHomeScreen(
                             DashboardActionButton(
                                 label = label,
                                 onClick = {
-                                    Toast
-                                        .makeText(context, toastMessage, Toast.LENGTH_SHORT)
-                                        .show()
+                                    if (label == "Haneler") {
+                                        onHouseholdsClick()
+                                    } else {
+                                        Toast
+                                            .makeText(context, toastMessage, Toast.LENGTH_SHORT)
+                                            .show()
+                                    }
                                 },
                             )
                         }

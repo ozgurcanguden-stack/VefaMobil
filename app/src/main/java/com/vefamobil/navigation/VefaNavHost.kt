@@ -11,6 +11,7 @@ import androidx.navigation.navArgument
 import com.vefamobil.model.UserRole
 import com.vefamobil.presentation.HouseholdViewModel
 import com.vefamobil.presentation.LoginViewModel
+import com.vefamobil.presentation.PersonnelViewModel
 import com.vefamobil.presentation.screen.ForcePasswordChangeScreen
 import com.vefamobil.presentation.screen.HouseholdDetailScreen
 import com.vefamobil.presentation.screen.HouseholdFormScreen
@@ -19,6 +20,9 @@ import com.vefamobil.presentation.screen.LoginSelectionScreen
 import com.vefamobil.presentation.screen.ManagerHomeScreen
 import com.vefamobil.presentation.screen.ManagerLoginScreen
 import com.vefamobil.presentation.screen.PersonnelHomeScreen
+import com.vefamobil.presentation.screen.PersonnelDetailScreen
+import com.vefamobil.presentation.screen.PersonnelFormScreen
+import com.vefamobil.presentation.screen.PersonnelListScreen
 import com.vefamobil.presentation.screen.PersonnelLoginScreen
 import com.vefamobil.presentation.screen.SplashScreen
 
@@ -28,6 +32,7 @@ fun VefaNavHost(
 ) {
     val loginViewModel: LoginViewModel = viewModel()
     val householdViewModel: HouseholdViewModel = viewModel()
+    val personnelViewModel: PersonnelViewModel = viewModel()
 
     NavHost(
         navController = navController,
@@ -99,6 +104,7 @@ fun VefaNavHost(
             ManagerHomeScreen(
                 displayName = loginViewModel.currentUser?.displayName.orEmpty(),
                 onHouseholdsClick = { navController.navigate(VefaDestination.Households.route) },
+                onPersonnelClick = { navController.navigate(VefaDestination.PersonnelList.route) },
             )
         }
 
@@ -163,6 +169,67 @@ fun VefaNavHost(
                         householdViewModel.addHousehold(household)
                     } else {
                         householdViewModel.updateHousehold(household)
+                    }
+                    navController.popBackStack()
+                },
+            )
+        }
+
+        composable(VefaDestination.PersonnelList.route) {
+            PersonnelListScreen(
+                state = personnelViewModel.state,
+                onBackClick = navController::popBackStack,
+                onAddPersonnelClick = { navController.navigate(VefaDestination.PersonnelForm.createRoute()) },
+                onPersonnelClick = { personnelId ->
+                    navController.navigate(VefaDestination.PersonnelDetail.createRoute(personnelId))
+                },
+                onEditClick = { personnelId ->
+                    navController.navigate(VefaDestination.PersonnelForm.createRoute(personnelId))
+                },
+                onSearchQueryChange = personnelViewModel::onSearchQueryChange,
+                onDeleteClick = personnelViewModel::deletePersonnel,
+                onToggleActiveClick = personnelViewModel::toggleActive,
+            )
+        }
+
+        composable(VefaDestination.PersonnelDetail.route) { backStackEntry ->
+            val personnelId = backStackEntry.arguments?.getString("personnelId").orEmpty()
+
+            PersonnelDetailScreen(
+                personnel = personnelViewModel.getPersonnel(personnelId),
+                onBackClick = navController::popBackStack,
+                onEditClick = { id ->
+                    navController.navigate(VefaDestination.PersonnelForm.createRoute(id))
+                },
+                onDeleteClick = { id ->
+                    personnelViewModel.deletePersonnel(id)
+                    navController.popBackStack()
+                },
+                onToggleActiveClick = personnelViewModel::toggleActive,
+            )
+        }
+
+        composable(
+            route = VefaDestination.PersonnelForm.route,
+            arguments = listOf(
+                navArgument("personnelId") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                },
+            ),
+        ) { backStackEntry ->
+            val personnelId = backStackEntry.arguments?.getString("personnelId")
+            val initialPersonnel = personnelId?.let { personnelViewModel.getPersonnel(it) }
+
+            PersonnelFormScreen(
+                onBackClick = navController::popBackStack,
+                initialPersonnel = initialPersonnel,
+                onSavePersonnel = { personnel ->
+                    if (personnelId == null) {
+                        personnelViewModel.addPersonnel(personnel)
+                    } else {
+                        personnelViewModel.updatePersonnel(personnel)
                     }
                     navController.popBackStack()
                 },

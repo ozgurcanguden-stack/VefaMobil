@@ -35,4 +35,5 @@ sealed class VefaDestination(val route: String) {
         fun createRoute(taskId: String): String = "task_detail/$taskId"
     }
     data object TaskForm : VefaDestination("task_form")
+    data object Announcements : VefaDestination("announcements")
 }

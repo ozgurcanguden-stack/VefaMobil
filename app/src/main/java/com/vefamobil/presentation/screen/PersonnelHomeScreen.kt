@@ -38,15 +38,23 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.vefamobil.model.Announcement
 import com.vefamobil.model.TaskItem
 import com.vefamobil.model.TaskItemStatus
+import com.vefamobil.presentation.AnnouncementUiState
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun PersonnelHomeScreen(
     @Suppress("UNUSED_PARAMETER")
     displayName: String,
+    announcementState: AnnouncementUiState,
+    onAnnouncementRead: (String) -> Unit,
 ) {
     val context = LocalContext.current
+    val unreadAnnouncement = announcementState.announcements.firstOrNull { !it.isRead }
     val taskItems = remember {
         mutableStateListOf(
             TaskItem(
@@ -181,6 +189,13 @@ fun PersonnelHomeScreen(
                 }
                 noteTask = null
             },
+        )
+    }
+
+    unreadAnnouncement?.let { announcement ->
+        UnreadAnnouncementDialog(
+            announcement = announcement,
+            onReadClick = { onAnnouncementRead(announcement.id) },
         )
     }
 }
@@ -393,4 +408,42 @@ private fun MutableList<TaskItem>.updateTaskItem(
     if (index >= 0) {
         this[index] = transform(this[index])
     }
+}
+
+@Composable
+private fun UnreadAnnouncementDialog(
+    announcement: Announcement,
+    onReadClick: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = {},
+        confirmButton = {
+            Button(onClick = onReadClick) {
+                Text(text = "OKUDUM")
+            }
+        },
+        title = {
+            Text(text = announcement.title)
+        },
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text(text = announcement.message)
+                Text(
+                    text = "${announcement.createdAt.toAnnouncementDateText()}  ${announcement.createdAt.toAnnouncementTimeText()}",
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.64f),
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+        },
+    )
+}
+
+private fun Long.toAnnouncementDateText(): String {
+    return SimpleDateFormat("dd.MM.yyyy", Locale("tr", "TR")).format(Date(this))
+}
+
+private fun Long.toAnnouncementTimeText(): String {
+    return SimpleDateFormat("HH:mm", Locale("tr", "TR")).format(Date(this))
 }

@@ -9,10 +9,12 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.vefamobil.model.UserRole
+import com.vefamobil.presentation.AnnouncementViewModel
 import com.vefamobil.presentation.HouseholdViewModel
 import com.vefamobil.presentation.LoginViewModel
 import com.vefamobil.presentation.PersonnelViewModel
 import com.vefamobil.presentation.TaskViewModel
+import com.vefamobil.presentation.screen.AnnouncementsScreen
 import com.vefamobil.presentation.screen.ForcePasswordChangeScreen
 import com.vefamobil.presentation.screen.HouseholdDetailScreen
 import com.vefamobil.presentation.screen.HouseholdFormScreen
@@ -38,6 +40,7 @@ fun VefaNavHost(
     val householdViewModel: HouseholdViewModel = viewModel()
     val personnelViewModel: PersonnelViewModel = viewModel()
     val taskViewModel: TaskViewModel = viewModel()
+    val announcementViewModel: AnnouncementViewModel = viewModel()
 
     NavHost(
         navController = navController,
@@ -111,12 +114,15 @@ fun VefaNavHost(
                 onHouseholdsClick = { navController.navigate(VefaDestination.Households.route) },
                 onPersonnelClick = { navController.navigate(VefaDestination.PersonnelList.route) },
                 onTasksClick = { navController.navigate(VefaDestination.Tasks.route) },
+                onAnnouncementsClick = { navController.navigate(VefaDestination.Announcements.route) },
             )
         }
 
         composable(VefaDestination.PersonnelHome.route) {
             PersonnelHomeScreen(
                 displayName = loginViewModel.currentUser?.displayName.orEmpty(),
+                announcementState = announcementViewModel.state,
+                onAnnouncementRead = announcementViewModel::markAsRead,
             )
         }
 
@@ -275,6 +281,13 @@ fun VefaNavHost(
                     )
                     navController.popBackStack()
                 },
+            )
+        }
+
+        composable(VefaDestination.Announcements.route) {
+            AnnouncementsScreen(
+                state = announcementViewModel.state,
+                onBackClick = navController::popBackStack,
             )
         }
     }

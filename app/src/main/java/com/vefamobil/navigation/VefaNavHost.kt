@@ -210,7 +210,10 @@ fun VefaNavHost(
             val context = LocalContext.current
             ExcelImportScreen(
                 state = excelImportViewModel.state,
-                onBackClick = navController::popBackStack,
+                onBackClick = {
+                    householdViewModel.loadHouseholds()
+                    navController.popBackStack()
+                },
                 onFileSelected = { uri ->
                     excelImportViewModel.onFileSelected(context = context, uri = uri)
                 },

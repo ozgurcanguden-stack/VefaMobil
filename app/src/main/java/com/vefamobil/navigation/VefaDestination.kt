@@ -37,4 +37,5 @@ sealed class VefaDestination(val route: String) {
     data object TaskForm : VefaDestination("task_form")
     data object Announcements : VefaDestination("announcements")
     data object Reports : VefaDestination("reports")
+    data object Settings : VefaDestination("settings")
 }

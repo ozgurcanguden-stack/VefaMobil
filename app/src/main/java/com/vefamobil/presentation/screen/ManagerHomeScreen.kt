@@ -33,6 +33,7 @@ fun ManagerHomeScreen(
     displayName: String,
     onHouseholdsClick: () -> Unit,
     onPersonnelClick: () -> Unit,
+    onTasksClick: () -> Unit,
 ) {
     val context = LocalContext.current
     val toastMessage = "Bu ekran sonraki aşamada eklenecek."
@@ -107,6 +108,8 @@ fun ManagerHomeScreen(
                                         onHouseholdsClick()
                                     } else if (label == "Personeller") {
                                         onPersonnelClick()
+                                    } else if (label == "Görevler") {
+                                        onTasksClick()
                                     } else {
                                         Toast
                                             .makeText(context, toastMessage, Toast.LENGTH_SHORT)

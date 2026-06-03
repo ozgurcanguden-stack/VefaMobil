@@ -30,4 +30,9 @@ sealed class VefaDestination(val route: String) {
             return personnelId?.let { "$baseRoute?personnelId=$it" } ?: baseRoute
         }
     }
+    data object Tasks : VefaDestination("tasks")
+    data object TaskDetail : VefaDestination("task_detail/{taskId}") {
+        fun createRoute(taskId: String): String = "task_detail/$taskId"
+    }
+    data object TaskForm : VefaDestination("task_form")
 }

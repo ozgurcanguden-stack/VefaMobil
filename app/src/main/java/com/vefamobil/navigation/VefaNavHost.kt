@@ -12,6 +12,7 @@ import com.vefamobil.model.UserRole
 import com.vefamobil.presentation.HouseholdViewModel
 import com.vefamobil.presentation.LoginViewModel
 import com.vefamobil.presentation.PersonnelViewModel
+import com.vefamobil.presentation.TaskViewModel
 import com.vefamobil.presentation.screen.ForcePasswordChangeScreen
 import com.vefamobil.presentation.screen.HouseholdDetailScreen
 import com.vefamobil.presentation.screen.HouseholdFormScreen
@@ -25,6 +26,9 @@ import com.vefamobil.presentation.screen.PersonnelFormScreen
 import com.vefamobil.presentation.screen.PersonnelListScreen
 import com.vefamobil.presentation.screen.PersonnelLoginScreen
 import com.vefamobil.presentation.screen.SplashScreen
+import com.vefamobil.presentation.screen.TaskDetailScreen
+import com.vefamobil.presentation.screen.TaskFormScreen
+import com.vefamobil.presentation.screen.TasksScreen
 
 @Composable
 fun VefaNavHost(
@@ -33,6 +37,7 @@ fun VefaNavHost(
     val loginViewModel: LoginViewModel = viewModel()
     val householdViewModel: HouseholdViewModel = viewModel()
     val personnelViewModel: PersonnelViewModel = viewModel()
+    val taskViewModel: TaskViewModel = viewModel()
 
     NavHost(
         navController = navController,
@@ -105,6 +110,7 @@ fun VefaNavHost(
                 displayName = loginViewModel.currentUser?.displayName.orEmpty(),
                 onHouseholdsClick = { navController.navigate(VefaDestination.Households.route) },
                 onPersonnelClick = { navController.navigate(VefaDestination.PersonnelList.route) },
+                onTasksClick = { navController.navigate(VefaDestination.Tasks.route) },
             )
         }
 
@@ -231,6 +237,42 @@ fun VefaNavHost(
                     } else {
                         personnelViewModel.updatePersonnel(personnel)
                     }
+                    navController.popBackStack()
+                },
+            )
+        }
+
+        composable(VefaDestination.Tasks.route) {
+            TasksScreen(
+                state = taskViewModel.state,
+                onBackClick = navController::popBackStack,
+                onCreateTaskClick = { navController.navigate(VefaDestination.TaskForm.route) },
+                onTaskClick = { taskId ->
+                    navController.navigate(VefaDestination.TaskDetail.createRoute(taskId))
+                },
+            )
+        }
+
+        composable(VefaDestination.TaskDetail.route) { backStackEntry ->
+            val taskId = backStackEntry.arguments?.getString("taskId").orEmpty()
+
+            TaskDetailScreen(
+                task = taskViewModel.getTask(taskId),
+                households = taskViewModel.getTaskHouseholds(taskId),
+                onBackClick = navController::popBackStack,
+            )
+        }
+
+        composable(VefaDestination.TaskForm.route) {
+            TaskFormScreen(
+                onBackClick = navController::popBackStack,
+                onSaveTask = { neighborhood, totalHouseholds, createdMode, publishMode ->
+                    taskViewModel.addTask(
+                        neighborhood = neighborhood,
+                        totalHouseholds = totalHouseholds,
+                        createdMode = createdMode,
+                        publishMode = publishMode,
+                    )
                     navController.popBackStack()
                 },
             )

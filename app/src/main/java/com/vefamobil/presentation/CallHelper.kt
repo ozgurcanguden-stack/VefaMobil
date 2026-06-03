@@ -23,39 +23,38 @@ object CallHelper {
     ) {
         val primaryPhone = phone1.trim()
         val secondaryPhone = phone2?.trim().orEmpty()
+        val availablePhones = listOf(primaryPhone, secondaryPhone)
+            .filter { it.isNotBlank() }
 
         when {
-            primaryPhone.isBlank() && secondaryPhone.isBlank() -> {
+            availablePhones.isEmpty() -> {
                 Toast
                     .makeText(context, "Bu hane için kayıtlı telefon numarası yok.", Toast.LENGTH_SHORT)
                     .show()
             }
 
-            secondaryPhone.isNotBlank() -> {
+            availablePhones.size > 1 -> {
                 showPhoneSelectionDialog(
                     context = context,
-                    phone1 = primaryPhone,
-                    phone2 = secondaryPhone,
+                    phoneNumbers = availablePhones,
                 )
             }
 
             else -> {
-                openSelectedPhone(context = context, phoneNumber = primaryPhone)
+                openSelectedPhone(context = context, phoneNumber = availablePhones.first())
             }
         }
     }
 
     private fun showPhoneSelectionDialog(
         context: Context,
-        phone1: String,
-        phone2: String,
+        phoneNumbers: List<String>,
     ) {
         AlertDialog.Builder(context)
             .setTitle("Aranacak numarayı seçin")
-            .setItems(arrayOf("Cep 1", "Cep 2")) { dialog, which ->
-                val selectedPhone = if (which == 0) phone1 else phone2
+            .setItems(phoneNumbers.toTypedArray()) { dialog, which ->
                 dialog.dismiss()
-                openSelectedPhone(context = context, phoneNumber = selectedPhone)
+                openSelectedPhone(context = context, phoneNumber = phoneNumbers[which])
             }
             .show()
     }

@@ -9,12 +9,7 @@ import android.net.Uri
 import android.widget.Toast
 
 object CallHelper {
-    private val netsippPackageCandidates = listOf(
-        "com.netsipp",
-        "com.netsipp.plus",
-        "net.netsipp",
-        "tr.com.netsipp",
-    )
+    private const val NETSIPP_PACKAGE_NAME = "com.netsippplus.android"
 
     fun openCallScreen(
         context: Context,
@@ -71,10 +66,12 @@ object CallHelper {
             return
         }
 
-        val openedWithNetsipp = openWithNetsipp(context = context, phoneNumber = normalizedPhone)
-        if (!openedWithNetsipp) {
+        if (!openWithNetsipp(
+            context = context,
+            phoneNumber = normalizedPhone,
+        )) {
             Toast
-                .makeText(context, "Netsipp+ açılamadı.\nTelefon arama ekranı açılıyor.", Toast.LENGTH_SHORT)
+                .makeText(context, "Kurumsal arama açılamadı. Telefon arama ekranı açılıyor.", Toast.LENGTH_SHORT)
                 .show()
             openWithDialer(context = context, phoneNumber = normalizedPhone)
         }
@@ -84,25 +81,14 @@ object CallHelper {
         context: Context,
         phoneNumber: String,
     ): Boolean {
-        val dialUri = Uri.parse("tel:$phoneNumber")
-        val netsippIntents = buildList {
-            netsippPackageCandidates.forEach { packageName ->
-                add(
-                    Intent(Intent.ACTION_DIAL, dialUri).apply {
-                        setPackage(packageName)
-                    },
-                )
-                add(
-                    Intent(Intent.ACTION_VIEW, dialUri).apply {
-                        setPackage(packageName)
-                    },
-                )
-            }
+        val intent = Intent(
+            Intent.ACTION_DIAL,
+            Uri.parse("tel:$phoneNumber"),
+        ).apply {
+            setPackage(NETSIPP_PACKAGE_NAME)
         }
 
-        return netsippIntents.any { intent ->
-            context.tryStartNetsippActivity(intent)
-        }
+        return context.tryStartActivity(intent)
     }
 
     private fun openWithDialer(
@@ -118,24 +104,6 @@ object CallHelper {
             Toast
                 .makeText(context, "Arama ekranı açılamadı.", Toast.LENGTH_SHORT)
                 .show()
-        }
-    }
-
-    private fun Context.tryStartNetsippActivity(intent: Intent): Boolean {
-        return try {
-            if (this !is Activity) {
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            }
-            startActivity(intent)
-            true
-        } catch (_: ActivityNotFoundException) {
-            false
-        } catch (_: SecurityException) {
-            false
-        } catch (_: IllegalArgumentException) {
-            false
-        } catch (_: RuntimeException) {
-            false
         }
     }
 

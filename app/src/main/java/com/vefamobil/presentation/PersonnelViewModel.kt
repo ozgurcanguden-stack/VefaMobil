@@ -4,9 +4,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import com.vefamobil.data.MockAuditLogRepository
 import com.vefamobil.data.MockPersonnelRepository
+import com.vefamobil.data.MockTrashRepository
+import com.vefamobil.model.AuditLog
 import com.vefamobil.model.Personnel
+import com.vefamobil.model.TrashItem
 import com.vefamobil.repository.PersonnelRepository
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 data class PersonnelUiState(
     val personnelList: List<Personnel> = emptyList(),
@@ -15,6 +22,8 @@ data class PersonnelUiState(
 
 class PersonnelViewModel : ViewModel() {
     private val personnelRepository: PersonnelRepository = MockPersonnelRepository()
+    private val trashRepository = MockTrashRepository()
+    private val auditLogRepository = MockAuditLogRepository()
     private var allPersonnel: List<Personnel> = emptyList()
 
     var state by mutableStateOf(PersonnelUiState())
@@ -45,6 +54,33 @@ class PersonnelViewModel : ViewModel() {
     }
 
     fun deletePersonnel(id: String) {
+        val personnel = allPersonnel.firstOrNull { it.id == id }
+        if (personnel != null) {
+            val now = currentDateTimeText()
+            trashRepository.addToTrash(
+                TrashItem(
+                    id = "trash-personnel-${personnel.id}-${System.currentTimeMillis()}",
+                    entityType = "PERSONNEL",
+                    entityId = personnel.id,
+                    title = personnel.fullName,
+                    description = "Kullanıcı adı: ${personnel.username}",
+                    deletedBy = "Vefa Müdürü",
+                    deletedAt = now,
+                    canRestore = true,
+                ),
+            )
+            auditLogRepository.addLog(
+                AuditLog(
+                    id = "log-personnel-delete-${personnel.id}-${System.currentTimeMillis()}",
+                    actionType = "DELETE_PERSONNEL",
+                    entityType = "PERSONNEL",
+                    entityId = personnel.id,
+                    description = "${personnel.fullName} silindi.",
+                    performedBy = "Vefa Müdürü",
+                    createdAt = now,
+                ),
+            )
+        }
         personnelRepository.deletePersonnel(id)
         loadPersonnel()
     }
@@ -73,5 +109,9 @@ class PersonnelViewModel : ViewModel() {
         }
 
         state = state.copy(personnelList = filteredPersonnel)
+    }
+
+    private fun currentDateTimeText(): String {
+        return SimpleDateFormat("dd.MM.yyyy HH:mm", Locale("tr", "TR")).format(Date())
     }
 }

@@ -16,7 +16,9 @@ import com.vefamobil.presentation.PersonnelViewModel
 import com.vefamobil.presentation.ReportsViewModel
 import com.vefamobil.presentation.SettingsViewModel
 import com.vefamobil.presentation.TaskViewModel
+import com.vefamobil.presentation.TrashAuditViewModel
 import com.vefamobil.presentation.screen.AnnouncementsScreen
+import com.vefamobil.presentation.screen.AuditLogsScreen
 import com.vefamobil.presentation.screen.ForcePasswordChangeScreen
 import com.vefamobil.presentation.screen.HouseholdDetailScreen
 import com.vefamobil.presentation.screen.HouseholdFormScreen
@@ -35,6 +37,7 @@ import com.vefamobil.presentation.screen.SplashScreen
 import com.vefamobil.presentation.screen.TaskDetailScreen
 import com.vefamobil.presentation.screen.TaskFormScreen
 import com.vefamobil.presentation.screen.TasksScreen
+import com.vefamobil.presentation.screen.TrashScreen
 
 @Composable
 fun VefaNavHost(
@@ -47,6 +50,7 @@ fun VefaNavHost(
     val announcementViewModel: AnnouncementViewModel = viewModel()
     val reportsViewModel: ReportsViewModel = viewModel()
     val settingsViewModel: SettingsViewModel = viewModel()
+    val trashAuditViewModel: TrashAuditViewModel = viewModel()
 
     NavHost(
         navController = navController,
@@ -123,6 +127,8 @@ fun VefaNavHost(
                 onAnnouncementsClick = { navController.navigate(VefaDestination.Announcements.route) },
                 onReportsClick = { navController.navigate(VefaDestination.Reports.route) },
                 onSettingsClick = { navController.navigate(VefaDestination.Settings.route) },
+                onTrashClick = { navController.navigate(VefaDestination.Trash.route) },
+                onAuditLogsClick = { navController.navigate(VefaDestination.AuditLogs.route) },
             )
         }
 
@@ -329,6 +335,24 @@ fun VefaNavHost(
                         }
                     }
                 },
+            )
+        }
+
+        composable(VefaDestination.Trash.route) {
+            TrashScreen(
+                state = trashAuditViewModel.state,
+                onBackClick = navController::popBackStack,
+                onLoad = trashAuditViewModel::loadData,
+                onRestoreClick = trashAuditViewModel::restoreItem,
+                onPermanentDeleteClick = trashAuditViewModel::permanentlyDelete,
+            )
+        }
+
+        composable(VefaDestination.AuditLogs.route) {
+            AuditLogsScreen(
+                state = trashAuditViewModel.state,
+                onBackClick = navController::popBackStack,
+                onLoad = trashAuditViewModel::loadData,
             )
         }
     }

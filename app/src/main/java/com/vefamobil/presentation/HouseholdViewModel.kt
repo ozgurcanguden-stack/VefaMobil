@@ -4,9 +4,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import com.vefamobil.data.MockAuditLogRepository
 import com.vefamobil.data.MockHouseholdRepository
+import com.vefamobil.data.MockTrashRepository
+import com.vefamobil.model.AuditLog
 import com.vefamobil.model.Household
+import com.vefamobil.model.TrashItem
 import com.vefamobil.repository.HouseholdRepository
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 data class HouseholdUiState(
     val households: List<Household> = emptyList(),
@@ -17,6 +24,8 @@ data class HouseholdUiState(
 
 class HouseholdViewModel : ViewModel() {
     private val householdRepository: HouseholdRepository = MockHouseholdRepository()
+    private val trashRepository = MockTrashRepository()
+    private val auditLogRepository = MockAuditLogRepository()
     private var allHouseholds: List<Household> = emptyList()
 
     var state by mutableStateOf(HouseholdUiState())
@@ -48,6 +57,33 @@ class HouseholdViewModel : ViewModel() {
     }
 
     fun deleteHousehold(id: String) {
+        val household = allHouseholds.firstOrNull { it.id == id }
+        if (household != null) {
+            val now = currentDateTimeText()
+            trashRepository.addToTrash(
+                TrashItem(
+                    id = "trash-household-${household.id}-${System.currentTimeMillis()}",
+                    entityType = "HOUSEHOLD",
+                    entityId = household.id,
+                    title = "${household.refCode} - ${household.fullName}",
+                    description = "${household.neighborhood} Mahallesi - ${household.address}",
+                    deletedBy = "Vefa Müdürü",
+                    deletedAt = now,
+                    canRestore = true,
+                ),
+            )
+            auditLogRepository.addLog(
+                AuditLog(
+                    id = "log-household-delete-${household.id}-${System.currentTimeMillis()}",
+                    actionType = "DELETE_HOUSEHOLD",
+                    entityType = "HOUSEHOLD",
+                    entityId = household.id,
+                    description = "${household.refCode} - ${household.fullName} silindi.",
+                    performedBy = "Vefa Müdürü",
+                    createdAt = now,
+                ),
+            )
+        }
         householdRepository.deleteHousehold(id)
         loadHouseholds()
     }
@@ -81,5 +117,9 @@ class HouseholdViewModel : ViewModel() {
             isLoading = isLoading,
             errorMessage = null,
         )
+    }
+
+    private fun currentDateTimeText(): String {
+        return SimpleDateFormat("dd.MM.yyyy HH:mm", Locale("tr", "TR")).format(Date())
     }
 }

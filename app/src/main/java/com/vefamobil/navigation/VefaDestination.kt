@@ -38,4 +38,6 @@ sealed class VefaDestination(val route: String) {
     data object Announcements : VefaDestination("announcements")
     data object Reports : VefaDestination("reports")
     data object Settings : VefaDestination("settings")
+    data object Trash : VefaDestination("trash")
+    data object AuditLogs : VefaDestination("audit_logs")
 }

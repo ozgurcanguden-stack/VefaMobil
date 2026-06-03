@@ -37,6 +37,8 @@ fun ManagerHomeScreen(
     onAnnouncementsClick: () -> Unit,
     onReportsClick: () -> Unit,
     onSettingsClick: () -> Unit,
+    onTrashClick: () -> Unit,
+    onAuditLogsClick: () -> Unit,
 ) {
     val context = LocalContext.current
     val toastMessage = "Bu ekran sonraki aşamada eklenecek."
@@ -53,6 +55,8 @@ fun ManagerHomeScreen(
         "Raporlar",
         "Duyurular",
         "Ayarlar",
+        "Çöp Kutusu",
+        "İşlem Geçmişi",
     )
 
     Surface(
@@ -119,6 +123,10 @@ fun ManagerHomeScreen(
                                         onAnnouncementsClick()
                                     } else if (label == "Ayarlar") {
                                         onSettingsClick()
+                                    } else if (label == "Çöp Kutusu") {
+                                        onTrashClick()
+                                    } else if (label == "İşlem Geçmişi") {
+                                        onAuditLogsClick()
                                     } else {
                                         Toast
                                             .makeText(context, toastMessage, Toast.LENGTH_SHORT)

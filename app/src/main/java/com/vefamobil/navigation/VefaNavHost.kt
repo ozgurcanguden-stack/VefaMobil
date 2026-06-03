@@ -253,6 +253,7 @@ fun VefaNavHost(
                 state = taskViewModel.state,
                 onBackClick = navController::popBackStack,
                 onCreateTaskClick = { navController.navigate(VefaDestination.TaskForm.route) },
+                onAutoCreateTaskClick = taskViewModel::createAutomaticTask,
                 onTaskClick = { taskId ->
                     navController.navigate(VefaDestination.TaskDetail.createRoute(taskId))
                 },

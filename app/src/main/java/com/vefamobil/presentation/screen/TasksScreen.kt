@@ -12,6 +12,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.ArrowBack
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -25,10 +27,15 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.vefamobil.model.Task
+import com.vefamobil.model.TaskPublishMode
 import com.vefamobil.presentation.TaskUiState
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -37,8 +44,11 @@ fun TasksScreen(
     state: TaskUiState,
     onBackClick: () -> Unit,
     onCreateTaskClick: () -> Unit,
+    onAutoCreateTaskClick: (TaskPublishMode) -> Unit,
     onTaskClick: (String) -> Unit,
 ) {
+    var showPublishDialog by rememberSaveable { mutableStateOf(false) }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -75,23 +85,64 @@ fun TasksScreen(
         },
         containerColor = MaterialTheme.colorScheme.background,
     ) { paddingValues ->
-        LazyColumn(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            items(
-                items = state.tasks,
-                key = { task -> task.id },
-            ) { task ->
-                TaskCard(
-                    task = task,
-                    onClick = { onTaskClick(task.id) },
-                )
+            Button(
+                modifier = Modifier.fillMaxWidth(),
+                onClick = { showPublishDialog = true },
+            ) {
+                Text(text = "Otomatik Görev Oluştur")
+            }
+
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                items(
+                    items = state.tasks,
+                    key = { task -> task.id },
+                ) { task ->
+                    TaskCard(
+                        task = task,
+                        onClick = { onTaskClick(task.id) },
+                    )
+                }
             }
         }
+    }
+
+    if (showPublishDialog) {
+        AlertDialog(
+            onDismissRequest = { showPublishDialog = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showPublishDialog = false
+                        onAutoCreateTaskClick(TaskPublishMode.TODAY)
+                    },
+                ) {
+                    Text(text = "Bugün Yayınla")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showPublishDialog = false
+                        onAutoCreateTaskClick(TaskPublishMode.TOMORROW)
+                    },
+                ) {
+                    Text(text = "Yarın Yayınla")
+                }
+            },
+            text = {
+                Text(text = "Bu görevleri bugün mü, yarın mı yayınlamak istiyorsunuz?")
+            },
+        )
     }
 }
 

@@ -5,9 +5,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import com.vefamobil.data.MockTaskRepository
+import com.vefamobil.data.TaskPlannerMockData
+import com.vefamobil.domain.TaskPlanner
 import com.vefamobil.model.Household
 import com.vefamobil.model.Task
 import com.vefamobil.model.TaskCreatedMode
+import com.vefamobil.model.TaskItem
+import com.vefamobil.model.TaskItemStatus
 import com.vefamobil.model.TaskPublishMode
 import com.vefamobil.repository.TaskRepository
 import java.text.SimpleDateFormat
@@ -21,6 +25,8 @@ data class TaskUiState(
 
 class TaskViewModel : ViewModel() {
     private val taskRepository: TaskRepository = MockTaskRepository()
+    private val taskPlanner = TaskPlanner()
+    private val generatedTaskItemsByTaskId = mutableMapOf<String, List<TaskItem>>()
     private var allTasks: List<Task> = emptyList()
 
     var state by mutableStateOf(TaskUiState())
@@ -57,6 +63,41 @@ class TaskViewModel : ViewModel() {
         loadTasks()
     }
 
+    fun createAutomaticTask(publishMode: TaskPublishMode) {
+        val generatedItems = taskPlanner.generateDailyTask(
+            households = TaskPlannerMockData.households,
+            previousPendingItems = TaskPlannerMockData.previousPendingItems,
+            settings = TaskPlannerMockData.settings,
+        )
+        val taskId = UUID.randomUUID().toString()
+        val taskItems = generatedItems.map { taskItem ->
+            taskItem.copy(
+                id = "$taskId-${taskItem.householdId}",
+                taskId = taskId,
+            )
+        }
+        val neighborhoods = taskItems.map { it.neighborhood }.distinct()
+        val task = Task(
+            id = taskId,
+            taskDate = publishMode.toTaskDate(),
+            neighborhood = if (neighborhoods.size == 1) {
+                "${neighborhoods.first()} Mahallesi"
+            } else {
+                "Mahalle Sıralı Plan"
+            },
+            totalHouseholds = taskItems.size,
+            completedCount = taskItems.count { it.status == TaskItemStatus.DONE },
+            status = "Planlandı",
+            createdMode = TaskCreatedMode.AUTO,
+            publishMode = publishMode,
+            createdAt = System.currentTimeMillis(),
+        )
+
+        generatedTaskItemsByTaskId[taskId] = taskItems
+        taskRepository.addTask(task)
+        loadTasks()
+    }
+
     fun getTask(id: String): Task? {
         val visibleTasks = state.tasks
         return allTasks.firstOrNull { it.id == id }
@@ -64,6 +105,25 @@ class TaskViewModel : ViewModel() {
     }
 
     fun getTaskHouseholds(taskId: String): List<Household> {
+        generatedTaskItemsByTaskId[taskId]?.let { taskItems ->
+            return taskItems.map { taskItem ->
+                Household(
+                    id = taskItem.householdId,
+                    refCode = taskItem.refCode,
+                    neighborhood = taskItem.neighborhood,
+                    fullName = taskItem.householdName,
+                    tcNo = "",
+                    phone1 = taskItem.phone1,
+                    phone2 = taskItem.phone2,
+                    address = taskItem.address,
+                    isActive = true,
+                    isNewHousehold = taskItem.isNewHousehold,
+                    isUrgent = taskItem.isUrgent,
+                    firstVisitCompleted = taskItem.status == TaskItemStatus.DONE,
+                )
+            }
+        }
+
         val task = getTask(taskId)
         val neighborhood = task?.neighborhood?.removeSuffix(" Mahallesi").orEmpty()
 

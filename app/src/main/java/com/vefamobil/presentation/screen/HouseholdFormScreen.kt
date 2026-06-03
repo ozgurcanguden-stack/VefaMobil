@@ -1,6 +1,5 @@
 package com.vefamobil.presentation.screen
 
-import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -30,16 +29,17 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.vefamobil.model.Household
+import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HouseholdFormScreen(
     onBackClick: () -> Unit,
+    onSaveHousehold: (Household) -> Unit,
 ) {
-    val context = LocalContext.current
     var refCode by rememberSaveable { mutableStateOf("") }
     var neighborhood by rememberSaveable { mutableStateOf("") }
     var fullName by rememberSaveable { mutableStateOf("") }
@@ -139,9 +139,22 @@ fun HouseholdFormScreen(
             Button(
                 modifier = Modifier.fillMaxWidth(),
                 onClick = {
-                    Toast
-                        .makeText(context, "Kayıt sonraki aşamada eklenecek.", Toast.LENGTH_SHORT)
-                        .show()
+                    onSaveHousehold(
+                        Household(
+                            id = UUID.randomUUID().toString(),
+                            refCode = refCode.trim(),
+                            neighborhood = neighborhood.trim(),
+                            fullName = fullName.trim(),
+                            tcNo = tcNo.trim(),
+                            phone1 = phone1.trim(),
+                            phone2 = phone2.trim().takeIf { it.isNotEmpty() },
+                            address = address.trim(),
+                            isActive = true,
+                            isNewHousehold = true,
+                            isUrgent = isUrgent,
+                            firstVisitCompleted = false,
+                        ),
+                    )
                 },
             ) {
                 Text(text = "Kaydet")

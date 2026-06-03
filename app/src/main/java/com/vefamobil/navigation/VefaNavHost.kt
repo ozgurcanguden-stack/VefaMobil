@@ -7,6 +7,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.vefamobil.model.UserRole
+import com.vefamobil.presentation.HouseholdViewModel
 import com.vefamobil.presentation.LoginViewModel
 import com.vefamobil.presentation.screen.ForcePasswordChangeScreen
 import com.vefamobil.presentation.screen.HouseholdFormScreen
@@ -23,6 +24,7 @@ fun VefaNavHost(
     navController: NavHostController = rememberNavController(),
 ) {
     val loginViewModel: LoginViewModel = viewModel()
+    val householdViewModel: HouseholdViewModel = viewModel()
 
     NavHost(
         navController = navController,
@@ -105,14 +107,22 @@ fun VefaNavHost(
 
         composable(VefaDestination.Households.route) {
             HouseholdsScreen(
+                state = householdViewModel.state,
                 onBackClick = navController::popBackStack,
                 onNewHouseholdClick = { navController.navigate(VefaDestination.HouseholdForm.route) },
+                onSearchQueryChange = householdViewModel::onSearchQueryChange,
+                onDeleteClick = householdViewModel::deleteHousehold,
+                onToggleActiveClick = householdViewModel::toggleActive,
             )
         }
 
         composable(VefaDestination.HouseholdForm.route) {
             HouseholdFormScreen(
                 onBackClick = navController::popBackStack,
+                onSaveHousehold = { household ->
+                    householdViewModel.addHousehold(household)
+                    navController.popBackStack()
+                },
             )
         }
     }

@@ -18,12 +18,13 @@ import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.FilterList
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -33,77 +34,26 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.vefamobil.model.Household
+import com.vefamobil.presentation.HouseholdUiState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HouseholdsScreen(
+    state: HouseholdUiState,
     onBackClick: () -> Unit,
     onNewHouseholdClick: () -> Unit,
+    onSearchQueryChange: (String) -> Unit,
+    onDeleteClick: (String) -> Unit,
+    onToggleActiveClick: (String) -> Unit,
 ) {
     val context = LocalContext.current
     val actionMessage = "Bu ekran sonraki aşamada eklenecek."
-    var searchQuery by rememberSaveable { mutableStateOf("") }
-    val households = listOf(
-        Household(
-            id = "1",
-            refCode = "REF001",
-            neighborhood = "Hürriyet",
-            fullName = "Ahmet Yılmaz",
-            tcNo = "11111111111",
-            phone1 = "05550000001",
-            phone2 = null,
-            address = "Hürriyet Mahallesi",
-            isActive = true,
-            isNewHousehold = true,
-            isUrgent = false,
-            firstVisitCompleted = false,
-        ),
-        Household(
-            id = "2",
-            refCode = "REF002",
-            neighborhood = "Cumhuriyet",
-            fullName = "Ayşe Kaya",
-            tcNo = "22222222222",
-            phone1 = "05550000002",
-            phone2 = "05550000012",
-            address = "Cumhuriyet Mahallesi",
-            isActive = true,
-            isNewHousehold = false,
-            isUrgent = true,
-            firstVisitCompleted = true,
-        ),
-        Household(
-            id = "3",
-            refCode = "REF003",
-            neighborhood = "Acarlar",
-            fullName = "Mehmet Demir",
-            tcNo = "33333333333",
-            phone1 = "05550000003",
-            phone2 = null,
-            address = "Acarlar Mahallesi",
-            isActive = false,
-            isNewHousehold = false,
-            isUrgent = false,
-            firstVisitCompleted = true,
-        ),
-    )
-    val filteredHouseholds = households.filter { household ->
-        val query = searchQuery.trim()
-        query.isEmpty() ||
-            household.refCode.contains(query, ignoreCase = true) ||
-            household.neighborhood.contains(query, ignoreCase = true) ||
-            household.fullName.contains(query, ignoreCase = true)
-    }
 
     Scaffold(
         topBar = {
@@ -155,8 +105,8 @@ fun HouseholdsScreen(
             ) {
                 OutlinedTextField(
                     modifier = Modifier.weight(1f),
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
+                    value = state.searchQuery,
+                    onValueChange = onSearchQueryChange,
                     placeholder = { Text(text = "Hane ara") },
                     leadingIcon = {
                         Icon(
@@ -175,18 +125,35 @@ fun HouseholdsScreen(
                 }
             }
 
+            if (state.isLoading) {
+                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+            }
+
+            state.errorMessage?.let { message ->
+                Text(
+                    text = message,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
+
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                items(filteredHouseholds) { household ->
+                items(
+                    items = state.households,
+                    key = { household -> household.id },
+                ) { household ->
                     HouseholdRow(
                         household = household,
-                        onActionClick = {
+                        onEditClick = {
                             Toast
                                 .makeText(context, actionMessage, Toast.LENGTH_SHORT)
                                 .show()
                         },
+                        onToggleActiveClick = { onToggleActiveClick(household.id) },
+                        onDeleteClick = { onDeleteClick(household.id) },
                     )
                 }
             }
@@ -197,13 +164,21 @@ fun HouseholdsScreen(
 @Composable
 private fun HouseholdRow(
     household: Household,
-    onActionClick: () -> Unit,
+    onEditClick: () -> Unit,
+    onToggleActiveClick: () -> Unit,
+    onDeleteClick: () -> Unit,
 ) {
+    val textAlpha = if (household.isActive) 1f else 0.48f
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface,
+            containerColor = if (household.isActive) {
+                MaterialTheme.colorScheme.surface
+            } else {
+                MaterialTheme.colorScheme.surfaceVariant
+            },
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
@@ -220,39 +195,39 @@ private fun HouseholdRow(
             ) {
                 Text(
                     text = "${household.refCode} - ${household.neighborhood}",
-                    color = MaterialTheme.colorScheme.primary,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = textAlpha),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                 )
 
                 Text(
                     text = household.fullName,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.72f),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = if (household.isActive) 0.72f else 0.48f),
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }
 
-            IconButton(onClick = onActionClick) {
+            IconButton(onClick = onEditClick) {
                 Icon(
                     imageVector = Icons.Outlined.Edit,
                     contentDescription = "Düzenle",
-                    tint = MaterialTheme.colorScheme.primary,
+                    tint = MaterialTheme.colorScheme.primary.copy(alpha = textAlpha),
                 )
             }
 
-            IconButton(onClick = onActionClick) {
+            IconButton(onClick = onToggleActiveClick) {
                 Icon(
                     imageVector = Icons.Outlined.Block,
                     contentDescription = "Pasife Al",
-                    tint = MaterialTheme.colorScheme.secondary,
+                    tint = MaterialTheme.colorScheme.secondary.copy(alpha = textAlpha),
                 )
             }
 
-            IconButton(onClick = onActionClick) {
+            IconButton(onClick = onDeleteClick) {
                 Icon(
                     imageVector = Icons.Outlined.Delete,
                     contentDescription = "Sil",
-                    tint = MaterialTheme.colorScheme.error,
+                    tint = MaterialTheme.colorScheme.error.copy(alpha = textAlpha),
                 )
             }
         }

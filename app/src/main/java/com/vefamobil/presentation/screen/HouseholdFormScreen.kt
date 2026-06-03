@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowBack
@@ -31,7 +32,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -43,11 +43,11 @@ fun HouseholdFormScreen(
     var refCode by rememberSaveable { mutableStateOf("") }
     var neighborhood by rememberSaveable { mutableStateOf("") }
     var fullName by rememberSaveable { mutableStateOf("") }
-    var identityNumber by rememberSaveable { mutableStateOf("") }
-    var phonePrimary by rememberSaveable { mutableStateOf("") }
-    var phoneSecondary by rememberSaveable { mutableStateOf("") }
+    var tcNo by rememberSaveable { mutableStateOf("") }
+    var phone1 by rememberSaveable { mutableStateOf("") }
+    var phone2 by rememberSaveable { mutableStateOf("") }
     var address by rememberSaveable { mutableStateOf("") }
-    var isEmergencyPriority by rememberSaveable { mutableStateOf(false) }
+    var isUrgent by rememberSaveable { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -94,20 +94,20 @@ fun HouseholdFormScreen(
                 label = "Ad Soyad",
             )
             HouseholdTextField(
-                value = identityNumber,
-                onValueChange = { identityNumber = it },
+                value = tcNo,
+                onValueChange = { tcNo = it },
                 label = "TC",
                 keyboardType = KeyboardType.Number,
             )
             HouseholdTextField(
-                value = phonePrimary,
-                onValueChange = { phonePrimary = it },
+                value = phone1,
+                onValueChange = { phone1 = it },
                 label = "Cep 1",
                 keyboardType = KeyboardType.Phone,
             )
             HouseholdTextField(
-                value = phoneSecondary,
-                onValueChange = { phoneSecondary = it },
+                value = phone2,
+                onValueChange = { phone2 = it },
                 label = "Cep 2",
                 keyboardType = KeyboardType.Phone,
             )
@@ -125,8 +125,8 @@ fun HouseholdFormScreen(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Checkbox(
-                    checked = isEmergencyPriority,
-                    onCheckedChange = { isEmergencyPriority = it },
+                    checked = isUrgent,
+                    onCheckedChange = { isUrgent = it },
                 )
 
                 Text(

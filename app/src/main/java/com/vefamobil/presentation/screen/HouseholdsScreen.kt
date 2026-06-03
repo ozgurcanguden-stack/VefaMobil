@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Block
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
@@ -41,11 +42,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.vefamobil.model.Household
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HouseholdsScreen(
-    @Suppress("UNUSED_PARAMETER")
     onBackClick: () -> Unit,
     onNewHouseholdClick: () -> Unit,
 ) {
@@ -53,9 +54,48 @@ fun HouseholdsScreen(
     val actionMessage = "Bu ekran sonraki aşamada eklenecek."
     var searchQuery by rememberSaveable { mutableStateOf("") }
     val households = listOf(
-        MockHousehold(refCode = "REF001", neighborhood = "Hürriyet", fullName = "Ahmet Yılmaz"),
-        MockHousehold(refCode = "REF002", neighborhood = "Cumhuriyet", fullName = "Ayşe Kaya"),
-        MockHousehold(refCode = "REF003", neighborhood = "Acarlar", fullName = "Mehmet Demir"),
+        Household(
+            id = "1",
+            refCode = "REF001",
+            neighborhood = "Hürriyet",
+            fullName = "Ahmet Yılmaz",
+            tcNo = "11111111111",
+            phone1 = "05550000001",
+            phone2 = null,
+            address = "Hürriyet Mahallesi",
+            isActive = true,
+            isNewHousehold = true,
+            isUrgent = false,
+            firstVisitCompleted = false,
+        ),
+        Household(
+            id = "2",
+            refCode = "REF002",
+            neighborhood = "Cumhuriyet",
+            fullName = "Ayşe Kaya",
+            tcNo = "22222222222",
+            phone1 = "05550000002",
+            phone2 = "05550000012",
+            address = "Cumhuriyet Mahallesi",
+            isActive = true,
+            isNewHousehold = false,
+            isUrgent = true,
+            firstVisitCompleted = true,
+        ),
+        Household(
+            id = "3",
+            refCode = "REF003",
+            neighborhood = "Acarlar",
+            fullName = "Mehmet Demir",
+            tcNo = "33333333333",
+            phone1 = "05550000003",
+            phone2 = null,
+            address = "Acarlar Mahallesi",
+            isActive = false,
+            isNewHousehold = false,
+            isUrgent = false,
+            firstVisitCompleted = true,
+        ),
     )
     val filteredHouseholds = households.filter { household ->
         val query = searchQuery.trim()
@@ -69,6 +109,14 @@ fun HouseholdsScreen(
         topBar = {
             TopAppBar(
                 title = { Text(text = "Haneler") },
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) {
+                        Icon(
+                            imageVector = Icons.Outlined.ArrowBack,
+                            contentDescription = "Geri",
+                        )
+                    }
+                },
                 actions = {
                     TextButton(
                         onClick = onNewHouseholdClick,
@@ -85,6 +133,7 @@ fun HouseholdsScreen(
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
                     titleContentColor = MaterialTheme.colorScheme.onPrimary,
                     actionIconContentColor = MaterialTheme.colorScheme.onPrimary,
                 ),
@@ -147,7 +196,7 @@ fun HouseholdsScreen(
 
 @Composable
 private fun HouseholdRow(
-    household: MockHousehold,
+    household: Household,
     onActionClick: () -> Unit,
 ) {
     Card(
@@ -209,9 +258,3 @@ private fun HouseholdRow(
         }
     }
 }
-
-private data class MockHousehold(
-    val refCode: String,
-    val neighborhood: String,
-    val fullName: String,
-)

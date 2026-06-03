@@ -1,0 +1,31 @@
+# Gradle
+.gradle/
+build/
+*/build/
+
+# Android Studio
+.idea/
+*.iml
+
+# Local config
+local.properties
+
+# Keystore / imza dosyaları
+*.jks
+*.keystore
+keystore.properties
+
+# Google / Firebase gizli dosyalar
+google-services.json
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Generated
+captures/
+.externalNativeBuild/
+.cxx/

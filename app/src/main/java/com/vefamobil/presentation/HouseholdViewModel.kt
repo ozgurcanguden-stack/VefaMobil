@@ -58,6 +58,12 @@ class HouseholdViewModel : ViewModel() {
         loadHouseholds()
     }
 
+    fun getHousehold(id: String): Household? {
+        val visibleHouseholds = state.households
+        return allHouseholds.firstOrNull { it.id == id }
+            ?: visibleHouseholds.firstOrNull { it.id == id }
+    }
+
     private fun applySearchFilter(isLoading: Boolean = state.isLoading) {
         val query = state.searchQuery.trim()
         val filteredHouseholds = if (query.isEmpty()) {

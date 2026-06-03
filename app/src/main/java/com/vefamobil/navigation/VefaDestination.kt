@@ -9,5 +9,14 @@ sealed class VefaDestination(val route: String) {
     data object ManagerHome : VefaDestination("manager_home")
     data object PersonnelHome : VefaDestination("personnel_home")
     data object Households : VefaDestination("households")
-    data object HouseholdForm : VefaDestination("household_form")
+    data object HouseholdDetail : VefaDestination("household_detail/{householdId}") {
+        fun createRoute(householdId: String): String = "household_detail/$householdId"
+    }
+    data object HouseholdForm : VefaDestination("household_form?householdId={householdId}") {
+        const val baseRoute: String = "household_form"
+
+        fun createRoute(householdId: String? = null): String {
+            return householdId?.let { "$baseRoute?householdId=$it" } ?: baseRoute
+        }
+    }
 }

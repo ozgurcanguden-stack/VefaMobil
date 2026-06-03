@@ -1,6 +1,6 @@
 package com.vefamobil.presentation.screen
 
-import android.widget.Toast
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,6 +18,7 @@ import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.FilterList
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -34,9 +35,12 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.vefamobil.model.Household
@@ -48,12 +52,14 @@ fun HouseholdsScreen(
     state: HouseholdUiState,
     onBackClick: () -> Unit,
     onNewHouseholdClick: () -> Unit,
+    onHouseholdClick: (String) -> Unit,
+    onEditClick: (String) -> Unit,
     onSearchQueryChange: (String) -> Unit,
     onDeleteClick: (String) -> Unit,
     onToggleActiveClick: (String) -> Unit,
 ) {
-    val context = LocalContext.current
-    val actionMessage = "Bu ekran sonraki aşamada eklenecek."
+    var pendingDeleteHousehold by remember { mutableStateOf<Household?>(null) }
+    var pendingToggleHousehold by remember { mutableStateOf<Household?>(null) }
 
     Scaffold(
         topBar = {
@@ -147,23 +153,75 @@ fun HouseholdsScreen(
                 ) { household ->
                     HouseholdRow(
                         household = household,
-                        onEditClick = {
-                            Toast
-                                .makeText(context, actionMessage, Toast.LENGTH_SHORT)
-                                .show()
-                        },
-                        onToggleActiveClick = { onToggleActiveClick(household.id) },
-                        onDeleteClick = { onDeleteClick(household.id) },
+                        onClick = { onHouseholdClick(household.id) },
+                        onEditClick = { onEditClick(household.id) },
+                        onToggleActiveClick = { pendingToggleHousehold = household },
+                        onDeleteClick = { pendingDeleteHousehold = household },
                     )
                 }
             }
         }
+    }
+
+    pendingDeleteHousehold?.let { household ->
+        AlertDialog(
+            onDismissRequest = { pendingDeleteHousehold = null },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        pendingDeleteHousehold = null
+                        onDeleteClick(household.id)
+                    },
+                ) {
+                    Text(text = "Sil")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingDeleteHousehold = null }) {
+                    Text(text = "İptal")
+                }
+            },
+            text = {
+                Text(text = "Bu hane silinecek. Devam etmek istiyor musunuz?")
+            },
+        )
+    }
+
+    pendingToggleHousehold?.let { household ->
+        AlertDialog(
+            onDismissRequest = { pendingToggleHousehold = null },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        pendingToggleHousehold = null
+                        onToggleActiveClick(household.id)
+                    },
+                ) {
+                    Text(text = if (household.isActive) "Pasife Al" else "Aktife Al")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingToggleHousehold = null }) {
+                    Text(text = "İptal")
+                }
+            },
+            text = {
+                Text(
+                    text = if (household.isActive) {
+                        "Bu hane pasife alınacak. Günlük görev listelerine dahil edilmeyecek."
+                    } else {
+                        "Bu hane tekrar aktif hale getirilecek."
+                    },
+                )
+            },
+        )
     }
 }
 
 @Composable
 private fun HouseholdRow(
     household: Household,
+    onClick: () -> Unit,
     onEditClick: () -> Unit,
     onToggleActiveClick: () -> Unit,
     onDeleteClick: () -> Unit,
@@ -171,7 +229,9 @@ private fun HouseholdRow(
     val textAlpha = if (household.isActive) 1f else 0.48f
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
         shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (household.isActive) {
@@ -218,7 +278,7 @@ private fun HouseholdRow(
             IconButton(onClick = onToggleActiveClick) {
                 Icon(
                     imageVector = Icons.Outlined.Block,
-                    contentDescription = "Pasife Al",
+                    contentDescription = if (household.isActive) "Pasife Al" else "Aktife Al",
                     tint = MaterialTheme.colorScheme.secondary.copy(alpha = textAlpha),
                 )
             }

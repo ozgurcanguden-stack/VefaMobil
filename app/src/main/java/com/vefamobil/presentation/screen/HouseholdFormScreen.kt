@@ -38,21 +38,23 @@ import java.util.UUID
 @Composable
 fun HouseholdFormScreen(
     onBackClick: () -> Unit,
+    initialHousehold: Household? = null,
     onSaveHousehold: (Household) -> Unit,
 ) {
-    var refCode by rememberSaveable { mutableStateOf("") }
-    var neighborhood by rememberSaveable { mutableStateOf("") }
-    var fullName by rememberSaveable { mutableStateOf("") }
-    var tcNo by rememberSaveable { mutableStateOf("") }
-    var phone1 by rememberSaveable { mutableStateOf("") }
-    var phone2 by rememberSaveable { mutableStateOf("") }
-    var address by rememberSaveable { mutableStateOf("") }
-    var isUrgent by rememberSaveable { mutableStateOf(false) }
+    val householdId = initialHousehold?.id
+    var refCode by rememberSaveable(householdId) { mutableStateOf(initialHousehold?.refCode.orEmpty()) }
+    var neighborhood by rememberSaveable(householdId) { mutableStateOf(initialHousehold?.neighborhood.orEmpty()) }
+    var fullName by rememberSaveable(householdId) { mutableStateOf(initialHousehold?.fullName.orEmpty()) }
+    var tcNo by rememberSaveable(householdId) { mutableStateOf(initialHousehold?.tcNo.orEmpty()) }
+    var phone1 by rememberSaveable(householdId) { mutableStateOf(initialHousehold?.phone1.orEmpty()) }
+    var phone2 by rememberSaveable(householdId) { mutableStateOf(initialHousehold?.phone2.orEmpty()) }
+    var address by rememberSaveable(householdId) { mutableStateOf(initialHousehold?.address.orEmpty()) }
+    var isUrgent by rememberSaveable(householdId) { mutableStateOf(initialHousehold?.isUrgent ?: false) }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(text = "Yeni Hane") },
+                title = { Text(text = if (initialHousehold == null) "Yeni Hane" else "Haneyi Düzenle") },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(
@@ -141,7 +143,7 @@ fun HouseholdFormScreen(
                 onClick = {
                     onSaveHousehold(
                         Household(
-                            id = UUID.randomUUID().toString(),
+                            id = initialHousehold?.id ?: UUID.randomUUID().toString(),
                             refCode = refCode.trim(),
                             neighborhood = neighborhood.trim(),
                             fullName = fullName.trim(),
@@ -149,10 +151,10 @@ fun HouseholdFormScreen(
                             phone1 = phone1.trim(),
                             phone2 = phone2.trim().takeIf { it.isNotEmpty() },
                             address = address.trim(),
-                            isActive = true,
-                            isNewHousehold = true,
+                            isActive = initialHousehold?.isActive ?: true,
+                            isNewHousehold = initialHousehold?.isNewHousehold ?: true,
                             isUrgent = isUrgent,
-                            firstVisitCompleted = false,
+                            firstVisitCompleted = initialHousehold?.firstVisitCompleted ?: false,
                         ),
                     )
                 },

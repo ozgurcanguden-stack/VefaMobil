@@ -2,14 +2,17 @@ package com.vefamobil.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavType
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.vefamobil.model.UserRole
 import com.vefamobil.presentation.HouseholdViewModel
 import com.vefamobil.presentation.LoginViewModel
 import com.vefamobil.presentation.screen.ForcePasswordChangeScreen
+import com.vefamobil.presentation.screen.HouseholdDetailScreen
 import com.vefamobil.presentation.screen.HouseholdFormScreen
 import com.vefamobil.presentation.screen.HouseholdsScreen
 import com.vefamobil.presentation.screen.LoginSelectionScreen
@@ -109,18 +112,58 @@ fun VefaNavHost(
             HouseholdsScreen(
                 state = householdViewModel.state,
                 onBackClick = navController::popBackStack,
-                onNewHouseholdClick = { navController.navigate(VefaDestination.HouseholdForm.route) },
+                onNewHouseholdClick = { navController.navigate(VefaDestination.HouseholdForm.createRoute()) },
+                onHouseholdClick = { householdId ->
+                    navController.navigate(VefaDestination.HouseholdDetail.createRoute(householdId))
+                },
+                onEditClick = { householdId ->
+                    navController.navigate(VefaDestination.HouseholdForm.createRoute(householdId))
+                },
                 onSearchQueryChange = householdViewModel::onSearchQueryChange,
                 onDeleteClick = householdViewModel::deleteHousehold,
                 onToggleActiveClick = householdViewModel::toggleActive,
             )
         }
 
-        composable(VefaDestination.HouseholdForm.route) {
+        composable(VefaDestination.HouseholdDetail.route) { backStackEntry ->
+            val householdId = backStackEntry.arguments?.getString("householdId").orEmpty()
+
+            HouseholdDetailScreen(
+                household = householdViewModel.getHousehold(householdId),
+                onBackClick = navController::popBackStack,
+                onEditClick = { id ->
+                    navController.navigate(VefaDestination.HouseholdForm.createRoute(id))
+                },
+                onDeleteClick = { id ->
+                    householdViewModel.deleteHousehold(id)
+                    navController.popBackStack()
+                },
+                onToggleActiveClick = householdViewModel::toggleActive,
+            )
+        }
+
+        composable(
+            route = VefaDestination.HouseholdForm.route,
+            arguments = listOf(
+                navArgument("householdId") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                },
+            ),
+        ) { backStackEntry ->
+            val householdId = backStackEntry.arguments?.getString("householdId")
+            val initialHousehold = householdId?.let { householdViewModel.getHousehold(it) }
+
             HouseholdFormScreen(
                 onBackClick = navController::popBackStack,
+                initialHousehold = initialHousehold,
                 onSaveHousehold = { household ->
-                    householdViewModel.addHousehold(household)
+                    if (householdId == null) {
+                        householdViewModel.addHousehold(household)
+                    } else {
+                        householdViewModel.updateHousehold(household)
+                    }
                     navController.popBackStack()
                 },
             )

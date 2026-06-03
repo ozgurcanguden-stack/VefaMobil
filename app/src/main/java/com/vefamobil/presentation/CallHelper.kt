@@ -71,7 +71,11 @@ object CallHelper {
             return
         }
 
-        if (!openWithNetsipp(context = context, phoneNumber = normalizedPhone)) {
+        val openedWithNetsipp = openWithNetsipp(context = context, phoneNumber = normalizedPhone)
+        if (!openedWithNetsipp) {
+            Toast
+                .makeText(context, "Netsipp+ açılamadı.\nTelefon arama ekranı açılıyor.", Toast.LENGTH_SHORT)
+                .show()
             openWithDialer(context = context, phoneNumber = normalizedPhone)
         }
     }
@@ -80,11 +84,8 @@ object CallHelper {
         context: Context,
         phoneNumber: String,
     ): Boolean {
-        val encodedPhone = Uri.encode(phoneNumber)
-        val dialUri = Uri.parse("tel:$encodedPhone")
-        val specialIntents = buildList {
-            add(Intent(Intent.ACTION_VIEW, Uri.parse("netsipp://call?number=$encodedPhone")))
-            add(Intent(Intent.ACTION_VIEW, Uri.parse("netsippplus://call?number=$encodedPhone")))
+        val dialUri = Uri.parse("tel:$phoneNumber")
+        val netsippIntents = buildList {
             netsippPackageCandidates.forEach { packageName ->
                 add(
                     Intent(Intent.ACTION_DIAL, dialUri).apply {
@@ -99,8 +100,8 @@ object CallHelper {
             }
         }
 
-        return specialIntents.any { intent ->
-            context.tryStartActivity(intent)
+        return netsippIntents.any { intent ->
+            context.tryStartNetsippActivity(intent)
         }
     }
 
@@ -110,13 +111,31 @@ object CallHelper {
     ) {
         val intent = Intent(
             Intent.ACTION_DIAL,
-            Uri.parse("tel:${Uri.encode(phoneNumber)}"),
+            Uri.parse("tel:$phoneNumber"),
         )
 
         if (!context.tryStartActivity(intent)) {
             Toast
                 .makeText(context, "Arama ekranı açılamadı.", Toast.LENGTH_SHORT)
                 .show()
+        }
+    }
+
+    private fun Context.tryStartNetsippActivity(intent: Intent): Boolean {
+        return try {
+            if (this !is Activity) {
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            startActivity(intent)
+            true
+        } catch (_: ActivityNotFoundException) {
+            false
+        } catch (_: SecurityException) {
+            false
+        } catch (_: IllegalArgumentException) {
+            false
+        } catch (_: RuntimeException) {
+            false
         }
     }
 
@@ -132,6 +151,8 @@ object CallHelper {
         } catch (_: SecurityException) {
             false
         } catch (_: IllegalArgumentException) {
+            false
+        } catch (_: RuntimeException) {
             false
         }
     }

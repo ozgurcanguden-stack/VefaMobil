@@ -5,7 +5,9 @@ import android.app.AlertDialog
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.widget.Toast
 
 object CallHelper {
@@ -81,6 +83,10 @@ object CallHelper {
         context: Context,
         phoneNumber: String,
     ): Boolean {
+        if (!context.isPackageInstalled(NETSIPP_PACKAGE_NAME)) {
+            return false
+        }
+
         val intent = Intent(
             Intent.ACTION_DIAL,
             Uri.parse("tel:$phoneNumber"),
@@ -89,6 +95,25 @@ object CallHelper {
         }
 
         return context.tryStartActivity(intent)
+    }
+
+    private fun Context.isPackageInstalled(packageName: String): Boolean {
+        return try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                packageManager.getPackageInfo(
+                    packageName,
+                    PackageManager.PackageInfoFlags.of(0),
+                )
+            } else {
+                @Suppress("DEPRECATION")
+                packageManager.getPackageInfo(packageName, 0)
+            }
+            true
+        } catch (_: PackageManager.NameNotFoundException) {
+            false
+        } catch (_: RuntimeException) {
+            false
+        }
     }
 
     private fun openWithDialer(

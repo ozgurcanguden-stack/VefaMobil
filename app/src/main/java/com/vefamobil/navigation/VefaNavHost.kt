@@ -1,6 +1,7 @@
 package com.vefamobil.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.NavHostController
@@ -10,6 +11,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.vefamobil.model.UserRole
 import com.vefamobil.presentation.AnnouncementViewModel
+import com.vefamobil.presentation.ExcelImportViewModel
 import com.vefamobil.presentation.HouseholdViewModel
 import com.vefamobil.presentation.LoginViewModel
 import com.vefamobil.presentation.PersonnelViewModel
@@ -19,6 +21,7 @@ import com.vefamobil.presentation.TaskViewModel
 import com.vefamobil.presentation.TrashAuditViewModel
 import com.vefamobil.presentation.screen.AnnouncementsScreen
 import com.vefamobil.presentation.screen.AuditLogsScreen
+import com.vefamobil.presentation.screen.ExcelImportScreen
 import com.vefamobil.presentation.screen.ForcePasswordChangeScreen
 import com.vefamobil.presentation.screen.HouseholdDetailScreen
 import com.vefamobil.presentation.screen.HouseholdFormScreen
@@ -51,6 +54,7 @@ fun VefaNavHost(
     val reportsViewModel: ReportsViewModel = viewModel()
     val settingsViewModel: SettingsViewModel = viewModel()
     val trashAuditViewModel: TrashAuditViewModel = viewModel()
+    val excelImportViewModel: ExcelImportViewModel = viewModel()
 
     NavHost(
         navController = navController,
@@ -145,6 +149,7 @@ fun VefaNavHost(
                 state = householdViewModel.state,
                 onBackClick = navController::popBackStack,
                 onNewHouseholdClick = { navController.navigate(VefaDestination.HouseholdForm.createRoute()) },
+                onExcelImportClick = { navController.navigate(VefaDestination.ExcelImport.route) },
                 onHouseholdClick = { householdId ->
                     navController.navigate(VefaDestination.HouseholdDetail.createRoute(householdId))
                 },
@@ -198,6 +203,18 @@ fun VefaNavHost(
                     }
                     navController.popBackStack()
                 },
+            )
+        }
+
+        composable(VefaDestination.ExcelImport.route) {
+            val context = LocalContext.current
+            ExcelImportScreen(
+                state = excelImportViewModel.state,
+                onBackClick = navController::popBackStack,
+                onFileSelected = { uri ->
+                    excelImportViewModel.onFileSelected(context = context, uri = uri)
+                },
+                onImportClick = excelImportViewModel::importPreviewItems,
             )
         }
 

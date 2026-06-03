@@ -11,13 +11,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Block
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.FilterList
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.UploadFile
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -52,6 +53,7 @@ fun HouseholdsScreen(
     state: HouseholdUiState,
     onBackClick: () -> Unit,
     onNewHouseholdClick: () -> Unit,
+    onExcelImportClick: () -> Unit,
     onHouseholdClick: (String) -> Unit,
     onEditClick: (String) -> Unit,
     onSearchQueryChange: (String) -> Unit,
@@ -68,12 +70,25 @@ fun HouseholdsScreen(
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(
-                            imageVector = Icons.Outlined.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
                             contentDescription = "Geri",
                         )
                     }
                 },
                 actions = {
+                    TextButton(
+                        onClick = onExcelImportClick,
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                        ),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.UploadFile,
+                            contentDescription = null,
+                        )
+                        Text(text = "Excel Yükle")
+                    }
+
                     TextButton(
                         onClick = onNewHouseholdClick,
                         colors = ButtonDefaults.textButtonColors(

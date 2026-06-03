@@ -9,6 +9,7 @@ sealed class VefaDestination(val route: String) {
     data object ManagerHome : VefaDestination("manager_home")
     data object PersonnelHome : VefaDestination("personnel_home")
     data object Households : VefaDestination("households")
+    data object ExcelImport : VefaDestination("excel_import")
     data object HouseholdDetail : VefaDestination("household_detail/{householdId}") {
         fun createRoute(householdId: String): String = "household_detail/$householdId"
     }

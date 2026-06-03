@@ -4,8 +4,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import com.vefamobil.data.mock.MockDataStore
 import com.vefamobil.data.MockHouseholdRepository
-import com.vefamobil.data.MockTaskRepository
+import com.vefamobil.model.TaskItemStatus
 
 data class ReportsUiState(
     val summary: ReportsSummary = ReportsSummary(),
@@ -58,7 +59,6 @@ data class PendingNoteReport(
 
 class ReportsViewModel : ViewModel() {
     private val householdRepository = MockHouseholdRepository()
-    private val taskRepository = MockTaskRepository()
 
     var state by mutableStateOf(ReportsUiState())
         private set
@@ -69,11 +69,11 @@ class ReportsViewModel : ViewModel() {
 
     fun loadReports() {
         val households = householdRepository.getHouseholds()
-        val tasks = taskRepository.getTasks()
-        val completedTasks = tasks.sumOf { it.completedCount }
-        val totalTaskItems = tasks.sumOf { it.totalHouseholds }
-        val notDoneTasks = 2
-        val tasksWithNotes = 3
+        val taskItems = MockDataStore.taskItems
+        val completedTasks = taskItems.count { it.status == TaskItemStatus.DONE }
+        val totalTaskItems = taskItems.size
+        val notDoneTasks = taskItems.count { it.status == TaskItemStatus.NOT_DONE }
+        val tasksWithNotes = MockDataStore.notes.size
         val pendingTasks = (totalTaskItems - completedTasks - notDoneTasks).coerceAtLeast(0)
         val summary = ReportsSummary(
             totalHouseholds = households.size,
@@ -106,15 +106,11 @@ class ReportsViewModel : ViewModel() {
                         totalHouseholds = neighborhoodHouseholds.size,
                         activeHouseholds = neighborhoodHouseholds.count { it.isActive },
                         passiveHouseholds = neighborhoodHouseholds.count { !it.isActive },
-                        completedTasks = when (neighborhood) {
-                            "Hürriyet" -> 4
-                            "Cumhuriyet" -> 5
-                            else -> 1
+                        completedTasks = taskItems.count {
+                            it.neighborhood == neighborhood && it.status == TaskItemStatus.DONE
                         },
-                        notDoneTasks = when (neighborhood) {
-                            "Hürriyet" -> 1
-                            "Cumhuriyet" -> 1
-                            else -> 0
+                        notDoneTasks = taskItems.count {
+                            it.neighborhood == neighborhood && it.status == TaskItemStatus.NOT_DONE
                         },
                     )
                 },
@@ -123,11 +119,14 @@ class ReportsViewModel : ViewModel() {
                 StaleHouseholdReport("Mehmet Demir", "Acarlar", "03.05.2026", 32),
                 StaleHouseholdReport("Ayşe Kaya", "Cumhuriyet", "28.04.2026", 37),
             ),
-            pendingNotes = listOf(
-                PendingNoteReport("Ahmet Yılmaz", "Hürriyet", "İlaç desteği tekrar kontrol edilecek.", "03.06.2026"),
-                PendingNoteReport("Ayşe Kaya", "Cumhuriyet", "Evde yoktu, tekrar ziyaret planlanacak.", "03.06.2026"),
-                PendingNoteReport("Mehmet Demir", "Acarlar", "Adres teyidi bekleniyor.", "02.06.2026"),
-            ),
+            pendingNotes = MockDataStore.notes.map { note ->
+                PendingNoteReport(
+                    householdName = note.householdName,
+                    neighborhood = note.neighborhood,
+                    noteSummary = note.summary,
+                    date = note.createdAt,
+                )
+            },
         )
     }
 }

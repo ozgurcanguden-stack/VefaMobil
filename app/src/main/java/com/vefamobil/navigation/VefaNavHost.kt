@@ -330,6 +330,7 @@ fun VefaNavHost(
             ReportsScreen(
                 state = reportsViewModel.state,
                 onBackClick = navController::popBackStack,
+                onLoad = reportsViewModel::loadReports,
             )
         }
 

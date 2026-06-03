@@ -37,11 +37,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.vefamobil.data.mock.MockDataStore
 import com.vefamobil.model.Announcement
-import com.vefamobil.model.TaskItem
-import com.vefamobil.model.TaskItemStatus
 import com.vefamobil.presentation.AnnouncementUiState
 import com.vefamobil.presentation.CallHelper
+import com.vefamobil.model.TaskItem
+import com.vefamobil.model.TaskItemStatus
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -56,53 +57,9 @@ fun PersonnelHomeScreen(
     val context = LocalContext.current
     val unreadAnnouncement = announcementState.announcements.firstOrNull { !it.isRead }
     val taskItems = remember {
-        mutableStateListOf(
-            TaskItem(
-                id = "1",
-                taskId = "task-1",
-                householdId = "household-1",
-                neighborhood = "Hürriyet",
-                householdName = "Ahmet Yılmaz",
-                refCode = "REF001",
-                phone1 = "05550000001",
-                phone2 = null,
-                address = "Hürriyet Mahallesi",
-                status = TaskItemStatus.PENDING,
-                isUrgent = false,
-                isNewHousehold = true,
-                note = "",
-            ),
-            TaskItem(
-                id = "2",
-                taskId = "task-1",
-                householdId = "household-2",
-                neighborhood = "Hürriyet",
-                householdName = "Ayşe Kaya",
-                refCode = "REF002",
-                phone1 = "05550000002",
-                phone2 = "05550000012",
-                address = "Hürriyet Mahallesi",
-                status = TaskItemStatus.PENDING,
-                isUrgent = true,
-                isNewHousehold = false,
-                note = "",
-            ),
-            TaskItem(
-                id = "3",
-                taskId = "task-1",
-                householdId = "household-3",
-                neighborhood = "Cumhuriyet",
-                householdName = "Mehmet Demir",
-                refCode = "REF003",
-                phone1 = "05550000003",
-                phone2 = null,
-                address = "Cumhuriyet Mahallesi",
-                status = TaskItemStatus.PENDING,
-                isUrgent = false,
-                isNewHousehold = false,
-                note = "",
-            ),
-        )
+        mutableStateListOf<TaskItem>().apply {
+            addAll(MockDataStore.taskItems)
+        }
     }
     var notDoneTask by remember { mutableStateOf<TaskItem?>(null) }
     var noteTask by remember { mutableStateOf<TaskItem?>(null) }
@@ -155,6 +112,9 @@ fun PersonnelHomeScreen(
                             taskItems.updateTaskItem(taskItem.id) {
                                 it.copy(status = TaskItemStatus.DONE)
                             }
+                            taskItems.firstOrNull { it.id == taskItem.id }?.let { updatedTaskItem ->
+                                MockDataStore.updateTaskItem(updatedTaskItem)
+                            }
                         },
                         onNotDoneClick = { notDoneTask = taskItem },
                         onNoteClick = { noteTask = taskItem },
@@ -173,8 +133,12 @@ fun PersonnelHomeScreen(
                         status = TaskItemStatus.NOT_DONE,
                         note = listOf(reason, description)
                             .filter { value -> value.isNotBlank() }
-                            .joinToString(" - "),
+                        .joinToString(" - "),
                     )
+                }
+                taskItems.firstOrNull { it.id == taskItem.id }?.let { updatedTaskItem ->
+                    MockDataStore.updateTaskItem(updatedTaskItem)
+                    MockDataStore.addOrUpdateNote(updatedTaskItem)
                 }
                 notDoneTask = null
             },
@@ -188,6 +152,10 @@ fun PersonnelHomeScreen(
             onSave = { note ->
                 taskItems.updateTaskItem(taskItem.id) {
                     it.copy(note = note)
+                }
+                taskItems.firstOrNull { it.id == taskItem.id }?.let { updatedTaskItem ->
+                    MockDataStore.updateTaskItem(updatedTaskItem)
+                    MockDataStore.addOrUpdateNote(updatedTaskItem)
                 }
                 noteTask = null
             },

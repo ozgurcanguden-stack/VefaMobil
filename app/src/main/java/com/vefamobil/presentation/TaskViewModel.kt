@@ -6,6 +6,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import com.vefamobil.data.MockTaskRepository
 import com.vefamobil.data.TaskPlannerMockData
+import com.vefamobil.data.mock.MockDataStore
 import com.vefamobil.domain.TaskPlanner
 import com.vefamobil.model.Household
 import com.vefamobil.model.Task
@@ -65,8 +66,10 @@ class TaskViewModel : ViewModel() {
 
     fun createAutomaticTask(publishMode: TaskPublishMode) {
         val generatedItems = taskPlanner.generateDailyTask(
-            households = TaskPlannerMockData.households,
-            previousPendingItems = TaskPlannerMockData.previousPendingItems,
+            households = MockDataStore.households,
+            previousPendingItems = MockDataStore.taskItems.filter {
+                it.status == TaskItemStatus.PENDING || it.status == TaskItemStatus.NOT_DONE
+            },
             settings = TaskPlannerMockData.settings,
         )
         val taskId = UUID.randomUUID().toString()
@@ -94,6 +97,7 @@ class TaskViewModel : ViewModel() {
         )
 
         generatedTaskItemsByTaskId[taskId] = taskItems
+        MockDataStore.taskItems.addAll(taskItems)
         taskRepository.addTask(task)
         loadTasks()
     }

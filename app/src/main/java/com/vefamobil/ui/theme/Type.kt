@@ -1,30 +1,18 @@
 package com.vefamobil.ui.theme
 
 import androidx.compose.material3.Typography
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import com.vefamobil.R
 
-/*
- * Red Hat Display font files should be placed under app/src/main/res/font with
- * these resource names before switching the family below from fallback to Font(...):
- *
- * red_hat_display_regular.ttf
- * red_hat_display_medium.ttf
- * red_hat_display_semibold.ttf
- * red_hat_display_bold.ttf
- * red_hat_display_black.ttf
- *
- * Intended setup after adding files:
- *
- * val RedHatDisplayFontFamily = FontFamily(
- *     Font(R.font.red_hat_display_regular, FontWeight.Normal),
- *     Font(R.font.red_hat_display_medium, FontWeight.Medium),
- *     Font(R.font.red_hat_display_semibold, FontWeight.SemiBold),
- *     Font(R.font.red_hat_display_bold, FontWeight.Bold),
- *     Font(R.font.red_hat_display_black, FontWeight.Black),
- * )
- */
-val RedHatDisplayFontFamily = FontFamily.Default
+val RedHatDisplayFontFamily = FontFamily(
+    Font(R.font.red_hat_display_regular, FontWeight.Normal),
+    Font(R.font.red_hat_display_medium, FontWeight.Medium),
+    Font(R.font.red_hat_display_semibold, FontWeight.SemiBold),
+    Font(R.font.red_hat_display_bold, FontWeight.Bold),
+    Font(R.font.red_hat_display_black, FontWeight.Black),
+)
 
 private val BaseTypography = Typography()
 

@@ -13,6 +13,7 @@ import com.vefamobil.presentation.AnnouncementViewModel
 import com.vefamobil.presentation.HouseholdViewModel
 import com.vefamobil.presentation.LoginViewModel
 import com.vefamobil.presentation.PersonnelViewModel
+import com.vefamobil.presentation.ReportsViewModel
 import com.vefamobil.presentation.TaskViewModel
 import com.vefamobil.presentation.screen.AnnouncementsScreen
 import com.vefamobil.presentation.screen.ForcePasswordChangeScreen
@@ -27,6 +28,7 @@ import com.vefamobil.presentation.screen.PersonnelDetailScreen
 import com.vefamobil.presentation.screen.PersonnelFormScreen
 import com.vefamobil.presentation.screen.PersonnelListScreen
 import com.vefamobil.presentation.screen.PersonnelLoginScreen
+import com.vefamobil.presentation.screen.ReportsScreen
 import com.vefamobil.presentation.screen.SplashScreen
 import com.vefamobil.presentation.screen.TaskDetailScreen
 import com.vefamobil.presentation.screen.TaskFormScreen
@@ -41,6 +43,7 @@ fun VefaNavHost(
     val personnelViewModel: PersonnelViewModel = viewModel()
     val taskViewModel: TaskViewModel = viewModel()
     val announcementViewModel: AnnouncementViewModel = viewModel()
+    val reportsViewModel: ReportsViewModel = viewModel()
 
     NavHost(
         navController = navController,
@@ -115,6 +118,7 @@ fun VefaNavHost(
                 onPersonnelClick = { navController.navigate(VefaDestination.PersonnelList.route) },
                 onTasksClick = { navController.navigate(VefaDestination.Tasks.route) },
                 onAnnouncementsClick = { navController.navigate(VefaDestination.Announcements.route) },
+                onReportsClick = { navController.navigate(VefaDestination.Reports.route) },
             )
         }
 
@@ -288,6 +292,13 @@ fun VefaNavHost(
         composable(VefaDestination.Announcements.route) {
             AnnouncementsScreen(
                 state = announcementViewModel.state,
+                onBackClick = navController::popBackStack,
+            )
+        }
+
+        composable(VefaDestination.Reports.route) {
+            ReportsScreen(
+                state = reportsViewModel.state,
                 onBackClick = navController::popBackStack,
             )
         }

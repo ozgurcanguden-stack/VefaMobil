@@ -35,6 +35,7 @@ fun ManagerHomeScreen(
     onPersonnelClick: () -> Unit,
     onTasksClick: () -> Unit,
     onAnnouncementsClick: () -> Unit,
+    onReportsClick: () -> Unit,
 ) {
     val context = LocalContext.current
     val toastMessage = "Bu ekran sonraki aşamada eklenecek."
@@ -111,6 +112,8 @@ fun ManagerHomeScreen(
                                         onPersonnelClick()
                                     } else if (label == "Görevler") {
                                         onTasksClick()
+                                    } else if (label == "Raporlar") {
+                                        onReportsClick()
                                     } else if (label == "Duyurular") {
                                         onAnnouncementsClick()
                                     } else {

@@ -2,6 +2,7 @@ package com.zgrcan.vefamobil.presentation.screen
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -36,6 +37,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -46,6 +48,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.zgrcan.vefamobil.model.Household
 import com.zgrcan.vefamobil.presentation.HouseholdUiState
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -59,123 +62,137 @@ fun HouseholdsScreen(
     onSearchQueryChange: (String) -> Unit,
     onDeleteClick: (String) -> Unit,
     onToggleActiveClick: (String) -> Unit,
+    onMessageShown: () -> Unit,
 ) {
     var pendingDeleteHousehold by remember { mutableStateOf<Household?>(null) }
     var pendingToggleHousehold by remember { mutableStateOf<Household?>(null) }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(text = "Haneler") },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
-                            contentDescription = "Geri",
-                        )
-                    }
-                },
-                actions = {
-                    TextButton(
-                        onClick = onExcelImportClick,
-                        colors = ButtonDefaults.textButtonColors(
-                            contentColor = MaterialTheme.colorScheme.onPrimary,
-                        ),
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.UploadFile,
-                            contentDescription = null,
-                        )
-                        Text(text = "Excel Yükle")
-                    }
+    LaunchedEffect(state.errorMessage, state.successMessage) {
+        if (!state.errorMessage.isNullOrBlank() || !state.successMessage.isNullOrBlank()) {
+            delay(2600)
+            onMessageShown()
+        }
+    }
 
-                    TextButton(
-                        onClick = onNewHouseholdClick,
-                        colors = ButtonDefaults.textButtonColors(
-                            contentColor = MaterialTheme.colorScheme.onPrimary,
-                        ),
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Add,
-                            contentDescription = null,
-                        )
-                        Text(text = "Yeni Hane")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                    actionIconContentColor = MaterialTheme.colorScheme.onPrimary,
-                ),
-            )
-        },
-        containerColor = MaterialTheme.colorScheme.background,
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(horizontal = 16.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                OutlinedTextField(
-                    modifier = Modifier.weight(1f),
-                    value = state.searchQuery,
-                    onValueChange = onSearchQueryChange,
-                    placeholder = { Text(text = "Hane ara") },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Outlined.Search,
-                            contentDescription = null,
-                        )
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text(text = "Haneler") },
+                    navigationIcon = {
+                        IconButton(onClick = onBackClick) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
+                                contentDescription = "Geri",
+                            )
+                        }
                     },
-                    singleLine = true,
+                    actions = {
+                        TextButton(
+                            onClick = onExcelImportClick,
+                            colors = ButtonDefaults.textButtonColors(
+                                contentColor = MaterialTheme.colorScheme.onPrimary,
+                            ),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.UploadFile,
+                                contentDescription = null,
+                            )
+                            Text(text = "Excel Yükle")
+                        }
+
+                        TextButton(
+                            onClick = onNewHouseholdClick,
+                            colors = ButtonDefaults.textButtonColors(
+                                contentColor = MaterialTheme.colorScheme.onPrimary,
+                            ),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Add,
+                                contentDescription = null,
+                            )
+                            Text(text = "Yeni Hane")
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
+                        titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                        actionIconContentColor = MaterialTheme.colorScheme.onPrimary,
+                    ),
                 )
-
-                OutlinedButton(onClick = {}) {
-                    Icon(
-                        imageVector = Icons.Outlined.FilterList,
-                        contentDescription = "Filtre",
-                    )
-                }
-            }
-
-            if (state.isLoading) {
-                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-            }
-
-            state.errorMessage?.let { message ->
-                Text(
-                    text = message,
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-            }
-
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
+            },
+            containerColor = MaterialTheme.colorScheme.background,
+        ) { paddingValues ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(horizontal = 16.dp, vertical = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
-                items(
-                    items = state.households,
-                    key = { household -> household.id },
-                ) { household ->
-                    HouseholdRow(
-                        household = household,
-                        onClick = { onHouseholdClick(household.id) },
-                        onEditClick = { onEditClick(household.id) },
-                        onToggleActiveClick = { pendingToggleHousehold = household },
-                        onDeleteClick = { pendingDeleteHousehold = household },
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    OutlinedTextField(
+                        modifier = Modifier.weight(1f),
+                        value = state.searchQuery,
+                        onValueChange = onSearchQueryChange,
+                        placeholder = { Text(text = "Hane ara") },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Outlined.Search,
+                                contentDescription = null,
+                            )
+                        },
+                        singleLine = true,
                     )
+
+                    OutlinedButton(onClick = {}) {
+                        Icon(
+                            imageVector = Icons.Outlined.FilterList,
+                            contentDescription = "Filtre",
+                        )
+                    }
+                }
+
+                if (state.isLoading) {
+                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                }
+
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    items(
+                        items = state.households,
+                        key = { household -> household.id },
+                    ) { household ->
+                        HouseholdRow(
+                            household = household,
+                            onClick = { onHouseholdClick(household.id) },
+                            onEditClick = { onEditClick(household.id) },
+                            onToggleActiveClick = { pendingToggleHousehold = household },
+                            onDeleteClick = { pendingDeleteHousehold = household },
+                        )
+                    }
                 }
             }
         }
+
+        TopNotification(
+            message = state.errorMessage,
+            type = TopNotificationType.ERROR,
+            modifier = Modifier.align(Alignment.TopCenter),
+        )
+
+        TopNotification(
+            message = state.successMessage,
+            type = TopNotificationType.SUCCESS,
+            modifier = Modifier.align(Alignment.TopCenter),
+        )
     }
 
     pendingDeleteHousehold?.let { household ->

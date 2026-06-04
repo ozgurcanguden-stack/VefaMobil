@@ -4,41 +4,69 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
-import com.zgrcan.vefamobil.data.MockAuditLogRepository
-import com.zgrcan.vefamobil.data.MockHouseholdRepository
-import com.zgrcan.vefamobil.data.MockTrashRepository
-import com.zgrcan.vefamobil.model.AuditLog
+import androidx.lifecycle.viewModelScope
+import com.zgrcan.vefamobil.data.firebase.FirestoreHouseholdRepository
 import com.zgrcan.vefamobil.model.Household
-import com.zgrcan.vefamobil.model.TrashItem
-import com.zgrcan.vefamobil.repository.HouseholdRepository
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import kotlinx.coroutines.launch
 
 data class HouseholdUiState(
     val households: List<Household> = emptyList(),
     val searchQuery: String = "",
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
+    val successMessage: String? = null,
 )
 
 class HouseholdViewModel : ViewModel() {
-    private val householdRepository: HouseholdRepository = MockHouseholdRepository()
-    private val trashRepository = MockTrashRepository()
-    private val auditLogRepository = MockAuditLogRepository()
+    private val householdRepository = FirestoreHouseholdRepository()
     private var allHouseholds: List<Household> = emptyList()
+    private var organizationId: String = ""
+    private var currentUserId: String = ""
 
     var state by mutableStateOf(HouseholdUiState())
         private set
 
-    init {
-        loadHouseholds()
+    fun setOrganizationContext(
+        organizationId: String,
+        currentUserId: String,
+    ) {
+        val trimmedOrganizationId = organizationId.trim()
+        val trimmedUserId = currentUserId.trim()
+
+        if (trimmedOrganizationId.isBlank()) {
+            this.organizationId = ""
+            this.currentUserId = trimmedUserId
+            showError("Kurum bilgisi bulunamadı.")
+            return
+        }
+
+        val shouldReload = this.organizationId != trimmedOrganizationId
+        this.organizationId = trimmedOrganizationId
+        this.currentUserId = trimmedUserId
+
+        if (shouldReload || allHouseholds.isEmpty()) {
+            loadHouseholds()
+        }
     }
 
     fun loadHouseholds() {
-        state = state.copy(isLoading = true, errorMessage = null)
-        allHouseholds = householdRepository.getHouseholds()
-        applySearchFilter(isLoading = false)
+        val currentOrganizationId = organizationId
+        if (currentOrganizationId.isBlank()) {
+            showError("Kurum bilgisi bulunamadı.")
+            return
+        }
+
+        state = state.copy(isLoading = true, errorMessage = null, successMessage = null)
+        viewModelScope.launch {
+            runCatching {
+                householdRepository.getHouseholds(currentOrganizationId)
+            }.onSuccess { households ->
+                allHouseholds = households
+                applySearchFilter(isLoading = false)
+            }.onFailure {
+                showOperationError()
+            }
+        }
     }
 
     fun onSearchQueryChange(query: String) {
@@ -47,51 +75,129 @@ class HouseholdViewModel : ViewModel() {
     }
 
     fun addHousehold(household: Household) {
-        householdRepository.addHousehold(household)
-        loadHouseholds()
+        val currentOrganizationId = organizationId
+        if (currentOrganizationId.isBlank()) {
+            showError("Kurum bilgisi bulunamadı.")
+            return
+        }
+
+        state = state.copy(isLoading = true, errorMessage = null, successMessage = null)
+        viewModelScope.launch {
+            runCatching {
+                householdRepository.addHousehold(
+                    organizationId = currentOrganizationId,
+                    household = household.copy(
+                        organizationId = currentOrganizationId,
+                        isActive = true,
+                        isNewHousehold = true,
+                        firstVisitCompleted = false,
+                        isDeleted = false,
+                        createdBy = currentUserId,
+                    ),
+                )
+                householdRepository.getHouseholds(currentOrganizationId)
+            }.onSuccess { households ->
+                allHouseholds = households
+                applySearchFilter(
+                    isLoading = false,
+                    successMessage = "Hane eklendi.",
+                )
+            }.onFailure {
+                showOperationError()
+            }
+        }
     }
 
     fun updateHousehold(household: Household) {
-        householdRepository.updateHousehold(household)
-        loadHouseholds()
+        val currentOrganizationId = organizationId
+        if (currentOrganizationId.isBlank()) {
+            showError("Kurum bilgisi bulunamadı.")
+            return
+        }
+
+        state = state.copy(isLoading = true, errorMessage = null, successMessage = null)
+        viewModelScope.launch {
+            runCatching {
+                householdRepository.updateHousehold(
+                    organizationId = currentOrganizationId,
+                    household = household.copy(
+                        organizationId = currentOrganizationId,
+                        isDeleted = false,
+                    ),
+                )
+                householdRepository.getHouseholds(currentOrganizationId)
+            }.onSuccess { households ->
+                allHouseholds = households
+                applySearchFilter(
+                    isLoading = false,
+                    successMessage = "Hane güncellendi.",
+                )
+            }.onFailure {
+                showOperationError()
+            }
+        }
     }
 
     fun deleteHousehold(id: String) {
-        val household = allHouseholds.firstOrNull { it.id == id }
-        if (household != null) {
-            val now = currentDateTimeText()
-            trashRepository.addToTrash(
-                TrashItem(
-                    id = "trash-household-${household.id}-${System.currentTimeMillis()}",
-                    entityType = "HOUSEHOLD",
-                    entityId = household.id,
-                    title = "${household.refCode} - ${household.fullName}",
-                    description = "${household.neighborhood} Mahallesi - ${household.address}",
-                    deletedBy = "Vefa Müdürü",
-                    deletedAt = now,
-                    canRestore = true,
-                ),
-            )
-            auditLogRepository.addLog(
-                AuditLog(
-                    id = "log-household-delete-${household.id}-${System.currentTimeMillis()}",
-                    actionType = "DELETE_HOUSEHOLD",
-                    entityType = "HOUSEHOLD",
-                    entityId = household.id,
-                    description = "${household.refCode} - ${household.fullName} silindi.",
-                    performedBy = "Vefa Müdürü",
-                    createdAt = now,
-                ),
-            )
+        val currentOrganizationId = organizationId
+        if (currentOrganizationId.isBlank()) {
+            showError("Kurum bilgisi bulunamadı.")
+            return
         }
-        householdRepository.deleteHousehold(id)
-        loadHouseholds()
+
+        state = state.copy(isLoading = true, errorMessage = null, successMessage = null)
+        viewModelScope.launch {
+            runCatching {
+                householdRepository.deleteHousehold(
+                    organizationId = currentOrganizationId,
+                    householdId = id,
+                )
+                householdRepository.getHouseholds(currentOrganizationId)
+            }.onSuccess { households ->
+                allHouseholds = households
+                applySearchFilter(
+                    isLoading = false,
+                    successMessage = "Hane silindi.",
+                )
+            }.onFailure {
+                showOperationError()
+            }
+        }
     }
 
     fun toggleActive(id: String) {
+        val currentOrganizationId = organizationId
+        if (currentOrganizationId.isBlank()) {
+            showError("Kurum bilgisi bulunamadı.")
+            return
+        }
+
         val household = allHouseholds.firstOrNull { it.id == id } ?: return
-        householdRepository.setHouseholdActive(id = id, isActive = !household.isActive)
-        loadHouseholds()
+        val newActiveState = !household.isActive
+
+        state = state.copy(isLoading = true, errorMessage = null, successMessage = null)
+        viewModelScope.launch {
+            runCatching {
+                householdRepository.setHouseholdActive(
+                    organizationId = currentOrganizationId,
+                    householdId = id,
+                    isActive = newActiveState,
+                )
+                householdRepository.getHouseholds(currentOrganizationId)
+            }.onSuccess { households ->
+                allHouseholds = households
+                applySearchFilter(
+                    isLoading = false,
+                    successMessage = if (newActiveState) {
+                        "Hane aktife alındı."
+                    } else {
+                        "Hane pasife alındı."
+                    },
+                )
+            }.onFailure {
+                showOperationError()
+            }
+        }
     }
 
     fun getHousehold(id: String): Household? {
@@ -100,7 +206,14 @@ class HouseholdViewModel : ViewModel() {
             ?: visibleHouseholds.firstOrNull { it.id == id }
     }
 
-    private fun applySearchFilter(isLoading: Boolean = state.isLoading) {
+    fun clearMessages() {
+        state = state.copy(errorMessage = null, successMessage = null)
+    }
+
+    private fun applySearchFilter(
+        isLoading: Boolean = state.isLoading,
+        successMessage: String? = state.successMessage,
+    ) {
         val query = state.searchQuery.trim()
         val filteredHouseholds = if (query.isEmpty()) {
             allHouseholds
@@ -116,10 +229,19 @@ class HouseholdViewModel : ViewModel() {
             households = filteredHouseholds,
             isLoading = isLoading,
             errorMessage = null,
+            successMessage = successMessage,
         )
     }
 
-    private fun currentDateTimeText(): String {
-        return SimpleDateFormat("dd.MM.yyyy HH:mm", Locale("tr", "TR")).format(Date())
+    private fun showOperationError() {
+        showError("Hane işlemi gerçekleştirilemedi.")
+    }
+
+    private fun showError(message: String) {
+        state = state.copy(
+            isLoading = false,
+            errorMessage = message,
+            successMessage = null,
+        )
     }
 }

@@ -6,6 +6,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -340,6 +341,15 @@ fun VefaNavHost(
         }
 
         composable(VefaDestination.Households.route) {
+            val householdOrganizationId = managerLoginViewModel.currentUser?.organizationId.orEmpty()
+            val householdUserId = managerLoginViewModel.currentUser?.uid.orEmpty()
+            LaunchedEffect(householdOrganizationId, householdUserId) {
+                householdViewModel.setOrganizationContext(
+                    organizationId = householdOrganizationId,
+                    currentUserId = householdUserId,
+                )
+            }
+
             HouseholdsScreen(
                 state = householdViewModel.state,
                 onBackClick = navController::popBackStack,
@@ -354,10 +364,19 @@ fun VefaNavHost(
                 onSearchQueryChange = householdViewModel::onSearchQueryChange,
                 onDeleteClick = householdViewModel::deleteHousehold,
                 onToggleActiveClick = householdViewModel::toggleActive,
+                onMessageShown = householdViewModel::clearMessages,
             )
         }
 
         composable(VefaDestination.HouseholdDetail.route) { backStackEntry ->
+            val householdOrganizationId = managerLoginViewModel.currentUser?.organizationId.orEmpty()
+            val householdUserId = managerLoginViewModel.currentUser?.uid.orEmpty()
+            LaunchedEffect(householdOrganizationId, householdUserId) {
+                householdViewModel.setOrganizationContext(
+                    organizationId = householdOrganizationId,
+                    currentUserId = householdUserId,
+                )
+            }
             val householdId = backStackEntry.arguments?.getString("householdId").orEmpty()
 
             HouseholdDetailScreen(
@@ -384,6 +403,14 @@ fun VefaNavHost(
                 },
             ),
         ) { backStackEntry ->
+            val householdOrganizationId = managerLoginViewModel.currentUser?.organizationId.orEmpty()
+            val householdUserId = managerLoginViewModel.currentUser?.uid.orEmpty()
+            LaunchedEffect(householdOrganizationId, householdUserId) {
+                householdViewModel.setOrganizationContext(
+                    organizationId = householdOrganizationId,
+                    currentUserId = householdUserId,
+                )
+            }
             val householdId = backStackEntry.arguments?.getString("householdId")
             val initialHousehold = householdId?.let { householdViewModel.getHousehold(it) }
 

@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -53,6 +54,7 @@ fun PersonnelHomeScreen(
     displayName: String,
     announcementState: AnnouncementUiState,
     onAnnouncementRead: (String) -> Unit,
+    onLogoutClick: () -> Unit,
 ) {
     val context = LocalContext.current
     val unreadAnnouncement = announcementState.announcements.firstOrNull { !it.isRead }
@@ -75,15 +77,29 @@ fun PersonnelHomeScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .systemBarsPadding()
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            Text(
-                text = "Bugünkü Görevler",
-                color = MaterialTheme.colorScheme.primary,
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    modifier = Modifier.weight(1f),
+                    text = "Bugünkü Görevler",
+                    color = MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+
+                OutlinedButton(onClick = onLogoutClick) {
+                    Text(text = "Çıkış Yap")
+                }
+            }
 
             Text(
                 text = "Toplam: ${taskItems.size}   Gidildi: $doneCount   Yapılmadı: $notDoneCount   Bekleyen: $pendingCount",
@@ -92,7 +108,9 @@ fun PersonnelHomeScreen(
             )
 
             LazyColumn(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 items(
@@ -212,10 +230,34 @@ private fun PersonnelTaskRow(
                 overflow = TextOverflow.Ellipsis,
             )
 
-            CompactActionButton(text = "Ara", onClick = onCallClick)
-            CompactActionButton(text = "Gidildi", onClick = onDoneClick)
-            CompactActionButton(text = "Yapılmadı", onClick = onNotDoneClick)
-            CompactActionButton(text = "Not", onClick = onNoteClick)
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 10.dp, end = 10.dp, bottom = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            CompactActionButton(
+                modifier = Modifier.weight(1f),
+                text = "Ara",
+                onClick = onCallClick,
+            )
+            CompactActionButton(
+                modifier = Modifier.weight(1f),
+                text = "Gidildi",
+                onClick = onDoneClick,
+            )
+            CompactActionButton(
+                modifier = Modifier.weight(1f),
+                text = "Yapılmadı",
+                onClick = onNotDoneClick,
+            )
+            CompactActionButton(
+                modifier = Modifier.weight(1f),
+                text = "Not",
+                onClick = onNoteClick,
+            )
         }
     }
 }
@@ -255,11 +297,12 @@ private fun BadgeSlot(
 
 @Composable
 private fun CompactActionButton(
+    modifier: Modifier = Modifier,
     text: String,
     onClick: () -> Unit,
 ) {
     OutlinedButton(
-        modifier = Modifier.heightIn(min = 36.dp),
+        modifier = modifier.heightIn(min = 36.dp),
         onClick = onClick,
     ) {
         Text(

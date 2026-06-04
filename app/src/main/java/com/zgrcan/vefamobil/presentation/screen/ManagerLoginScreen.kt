@@ -53,8 +53,8 @@ fun ManagerLoginScreen(
     LaunchedEffect(state.successTarget) {
         val target = state.successTarget ?: return@LaunchedEffect
         delay(450)
-        onLoginSuccess(target)
         onSuccessShown()
+        onLoginSuccess(target)
     }
 
     Box(modifier = Modifier.fillMaxSize()) {

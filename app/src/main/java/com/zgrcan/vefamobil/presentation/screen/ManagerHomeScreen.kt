@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -66,8 +67,9 @@ fun ManagerHomeScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .systemBarsPadding()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp, vertical = 28.dp),
+                .padding(horizontal = 20.dp, vertical = 18.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Column(
@@ -144,21 +146,29 @@ fun ManagerHomeScreen(
 
 @Composable
 private fun ManagerHeader() {
-    Column(
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.Top,
     ) {
-        Text(
-            text = "Vefa Mobil",
-            color = MaterialTheme.colorScheme.primary,
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
-        )
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Text(
+                text = "Vefa Mobil",
+                color = MaterialTheme.colorScheme.primary,
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+            )
 
-        Text(
-            text = "Müdür Ana Sayfa",
-            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.72f),
-            style = MaterialTheme.typography.titleMedium,
-        )
+            Text(
+                text = "Müdür Ana Sayfa",
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.72f),
+                style = MaterialTheme.typography.titleMedium,
+            )
+        }
+
     }
 }
 

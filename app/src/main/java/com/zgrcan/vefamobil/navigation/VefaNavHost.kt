@@ -92,6 +92,16 @@ fun VefaNavHost(
         navController.popBackStack()
     }
 
+    fun clearBackStackAndNavigate(route: String) {
+        while (navController.popBackStack()) {
+            // Clear every previous screen so login/home screens cannot remain underneath.
+        }
+
+        navController.navigate(route) {
+            launchSingleTop = true
+        }
+    }
+
     fun navigateToLoginSelection(clearLastLoginType: Boolean) {
         if (clearLastLoginType) {
             coroutineScope.launch {
@@ -99,24 +109,31 @@ fun VefaNavHost(
             }
         }
 
-        navController.navigate(VefaDestination.LoginSelection.route) {
-            launchSingleTop = true
-            popUpTo(VefaDestination.LoginSelection.route) {
-                inclusive = false
-            }
-        }
+        clearBackStackAndNavigate(VefaDestination.LoginSelection.route)
     }
 
-    fun navigateToLoginAfterLogout(route: String) {
-        val routeToPop = currentRoute
-        navController.navigate(route) {
-            launchSingleTop = true
-            if (routeToPop != null) {
-                popUpTo(routeToPop) {
-                    inclusive = true
-                }
-            }
+    fun navigateToLoginAfterLogout(lastUsedLoginType: LastLoginType) {
+        coroutineScope.launch {
+            loginPreferencesManager.setLastLoginType(lastUsedLoginType)
         }
+
+        val route = when (lastUsedLoginType) {
+            LastLoginType.MANAGER -> VefaDestination.ManagerLogin.route
+            LastLoginType.PERSONNEL -> VefaDestination.PersonnelLogin.route
+            LastLoginType.NONE -> VefaDestination.LoginSelection.route
+        }
+        clearBackStackAndNavigate(route)
+    }
+
+    fun navigateAfterSuccessfulLogin(
+        destination: String,
+        lastUsedLoginType: LastLoginType,
+    ) {
+        coroutineScope.launch {
+            loginPreferencesManager.setLastLoginType(lastUsedLoginType)
+        }
+
+        clearBackStackAndNavigate(destination)
     }
 
     BackHandler(enabled = true) {
@@ -128,13 +145,9 @@ fun VefaNavHost(
             VefaDestination.ForcePasswordChange.route
             -> Unit
 
-            VefaDestination.ManagerHome.route -> {
-                showManagerLogoutDialog = true
-            }
-
-            VefaDestination.PersonnelHome.route -> {
-                showPersonnelLogoutDialog = true
-            }
+            VefaDestination.ManagerHome.route,
+            VefaDestination.PersonnelHome.route,
+            -> Unit
 
             else -> {
                 safePopBackStack()
@@ -213,12 +226,10 @@ fun VefaNavHost(
                         ManagerLoginTarget.MANAGER_HOME -> VefaDestination.ManagerHome.route
                     }
 
-                    navController.navigate(destination) {
-                        launchSingleTop = true
-                        popUpTo(VefaDestination.LoginSelection.route) {
-                            inclusive = true
-                        }
-                    }
+                    navigateAfterSuccessfulLogin(
+                        destination = destination,
+                        lastUsedLoginType = LastLoginType.MANAGER,
+                    )
                 },
                 onErrorShown = managerLoginViewModel::clearError,
                 onSuccessShown = managerLoginViewModel::clearSuccess,
@@ -241,12 +252,10 @@ fun VefaNavHost(
                         PersonnelLoginTarget.PERSONNEL_HOME -> VefaDestination.PersonnelHome.route
                     }
 
-                    navController.navigate(destination) {
-                        launchSingleTop = true
-                        popUpTo(VefaDestination.LoginSelection.route) {
-                            inclusive = true
-                        }
-                    }
+                    navigateAfterSuccessfulLogin(
+                        destination = destination,
+                        lastUsedLoginType = LastLoginType.PERSONNEL,
+                    )
                 },
                 onErrorShown = personnelLoginViewModel::clearError,
                 onSuccessShown = personnelLoginViewModel::clearSuccess,
@@ -282,6 +291,8 @@ fun VefaNavHost(
         }
 
         composable(VefaDestination.ManagerHome.route) {
+            BackHandler(enabled = true) {}
+
             ManagerHomeScreen(
                 displayName = managerLoginViewModel.currentUser?.fullName
                     ?: loginViewModel.currentUser?.displayName.orEmpty(),
@@ -301,17 +312,20 @@ fun VefaNavHost(
                 onConfirm = {
                     showManagerLogoutDialog = false
                     managerLoginViewModel.logout()
-                    navigateToLoginAfterLogout(VefaDestination.ManagerLogin.route)
+                    navigateToLoginAfterLogout(LastLoginType.MANAGER)
                 },
             )
         }
 
         composable(VefaDestination.PersonnelHome.route) {
+            BackHandler(enabled = true) {}
+
             PersonnelHomeScreen(
                 displayName = personnelLoginViewModel.currentUser?.fullName
                     ?: loginViewModel.currentUser?.displayName.orEmpty(),
                 announcementState = announcementViewModel.state,
                 onAnnouncementRead = announcementViewModel::markAsRead,
+                onLogoutClick = { showPersonnelLogoutDialog = true },
             )
 
             LogoutConfirmDialog(
@@ -320,7 +334,7 @@ fun VefaNavHost(
                 onConfirm = {
                     showPersonnelLogoutDialog = false
                     personnelLoginViewModel.logout()
-                    navigateToLoginAfterLogout(VefaDestination.PersonnelLogin.route)
+                    navigateToLoginAfterLogout(LastLoginType.PERSONNEL)
                 },
             )
         }
@@ -532,12 +546,7 @@ fun VefaNavHost(
                 },
                 onLogoutClick = {
                     managerLoginViewModel.logout()
-                    navController.navigate(VefaDestination.LoginSelection.route) {
-                        launchSingleTop = true
-                        popUpTo(VefaDestination.LoginSelection.route) {
-                            inclusive = false
-                        }
-                    }
+                    navigateToLoginAfterLogout(LastLoginType.MANAGER)
                 },
             )
         }

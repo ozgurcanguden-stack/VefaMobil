@@ -190,7 +190,13 @@ class ManagerLoginViewModel(
         authRepository.logout()
         currentUser = null
         currentOrganization = null
-        state = state.copy(password = "")
+        state = state.copy(
+            password = "",
+            isLoading = false,
+            errorMessage = null,
+            successMessage = null,
+            successTarget = null,
+        )
     }
 
     fun clearError() {
@@ -198,7 +204,11 @@ class ManagerLoginViewModel(
     }
 
     fun clearSuccess() {
-        state = state.copy(successMessage = null, successTarget = null)
+        state = state.copy(
+            isLoading = false,
+            successMessage = null,
+            successTarget = null,
+        )
     }
 
     private fun failAfterAuthenticated(message: String) {

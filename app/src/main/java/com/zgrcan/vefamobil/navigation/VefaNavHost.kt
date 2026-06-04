@@ -21,6 +21,8 @@ import com.zgrcan.vefamobil.presentation.HouseholdViewModel
 import com.zgrcan.vefamobil.presentation.LoginViewModel
 import com.zgrcan.vefamobil.presentation.ManagerLoginTarget
 import com.zgrcan.vefamobil.presentation.ManagerLoginViewModel
+import com.zgrcan.vefamobil.presentation.PersonnelLoginTarget
+import com.zgrcan.vefamobil.presentation.PersonnelLoginViewModel
 import com.zgrcan.vefamobil.presentation.PersonnelViewModel
 import com.zgrcan.vefamobil.presentation.ReportsViewModel
 import com.zgrcan.vefamobil.presentation.SettingsViewModel
@@ -55,6 +57,7 @@ fun VefaNavHost(
 ) {
     val loginViewModel: LoginViewModel = viewModel()
     val managerLoginViewModel: ManagerLoginViewModel = viewModel()
+    val personnelLoginViewModel: PersonnelLoginViewModel = viewModel()
     val forcePasswordChangeViewModel: ForcePasswordChangeViewModel = viewModel()
     val householdViewModel: HouseholdViewModel = viewModel()
     val personnelViewModel: PersonnelViewModel = viewModel()
@@ -117,26 +120,36 @@ fun VefaNavHost(
 
         composable(VefaDestination.PersonnelLogin.route) {
             PersonnelLoginScreen(
+                state = personnelLoginViewModel.state,
                 onBackClick = navController::popBackStack,
-                onLoginClick = { username, password ->
-                    val user = loginViewModel.login(UserRole.PERSONNEL, username, password)
-                    val destination = if (user.mustChangePassword) {
-                        passwordChangeDestination = VefaDestination.PersonnelHome.route
-                        VefaDestination.ForcePasswordChange.route
-                    } else {
-                        VefaDestination.PersonnelHome.route
+                onOrganizationCodeChange = personnelLoginViewModel::onOrganizationCodeChange,
+                onEmailChange = personnelLoginViewModel::onEmailChange,
+                onPasswordChange = personnelLoginViewModel::onPasswordChange,
+                onRememberMeChange = personnelLoginViewModel::onRememberMeChange,
+                onChangeOrganizationClick = personnelLoginViewModel::clearSavedPersonnelLogin,
+                onLoginClick = personnelLoginViewModel::login,
+                onLoginSuccess = { target ->
+                    val destination = when (target) {
+                        PersonnelLoginTarget.FORCE_PASSWORD_CHANGE -> {
+                            passwordChangeDestination = VefaDestination.PersonnelHome.route
+                            VefaDestination.ForcePasswordChange.route
+                        }
+                        PersonnelLoginTarget.PERSONNEL_HOME -> VefaDestination.PersonnelHome.route
                     }
-                    navController.navigate(destination)
+
+                    navController.navigate(destination) {
+                        popUpTo(VefaDestination.LoginSelection.route)
+                    }
                 },
+                onErrorShown = personnelLoginViewModel::clearError,
+                onSuccessShown = personnelLoginViewModel::clearSuccess,
             )
         }
 
         composable(VefaDestination.ForcePasswordChange.route) {
-            val useFirebasePasswordChange = passwordChangeDestination != VefaDestination.PersonnelHome.route
-
             ForcePasswordChangeScreen(
                 state = forcePasswordChangeViewModel.state,
-                useFirebasePasswordChange = useFirebasePasswordChange,
+                useFirebasePasswordChange = true,
                 onNewPasswordChange = forcePasswordChangeViewModel::onNewPasswordChange,
                 onConfirmPasswordChange = forcePasswordChangeViewModel::onConfirmPasswordChange,
                 onChangePasswordClick = forcePasswordChangeViewModel::changePassword,
@@ -175,7 +188,8 @@ fun VefaNavHost(
 
         composable(VefaDestination.PersonnelHome.route) {
             PersonnelHomeScreen(
-                displayName = loginViewModel.currentUser?.displayName.orEmpty(),
+                displayName = personnelLoginViewModel.currentUser?.fullName
+                    ?: loginViewModel.currentUser?.displayName.orEmpty(),
                 announcementState = announcementViewModel.state,
                 onAnnouncementRead = announcementViewModel::markAsRead,
             )
@@ -383,6 +397,7 @@ fun VefaNavHost(
                 onAddNeighborhood = settingsViewModel::addNeighborhood,
                 onRemoveNeighborhood = settingsViewModel::removeNeighborhood,
                 onPasswordChangeClick = {
+                    passwordChangeDestination = VefaDestination.ManagerHome.route
                     navController.navigate(VefaDestination.ForcePasswordChange.route)
                 },
                 onLogoutClick = {

@@ -9,5 +9,7 @@ interface FirebaseAuthRepository {
 
     fun currentUser(): FirebaseUser?
 
+    suspend fun updatePassword(newPassword: String): Result<Unit>
+
     fun isLoggedIn(): Boolean
 }

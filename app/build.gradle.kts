@@ -70,6 +70,7 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.8.5")
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-firestore")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.9.0")
     implementation("org.apache.poi:poi-ooxml:3.17") {
         exclude(group = "org.apache.xmlbeans", module = "xmlbeans")
     }

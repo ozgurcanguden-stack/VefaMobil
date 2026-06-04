@@ -2,6 +2,7 @@ package com.zgrcan.vefamobil.data.firebase
 
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
+import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 
@@ -44,6 +45,18 @@ class FirebaseAuthManager {
             authOrNull()?.currentUser
         } catch (_: Exception) {
             null
+        }
+    }
+
+    suspend fun updatePassword(newPassword: String): Result<Unit> {
+        return try {
+            val user = currentUser() ?: return Result.failure(
+                IllegalStateException("Firebase user is not authenticated."),
+            )
+            user.updatePassword(newPassword).await()
+            Result.success(Unit)
+        } catch (exception: Exception) {
+            Result.failure(exception)
         }
     }
 

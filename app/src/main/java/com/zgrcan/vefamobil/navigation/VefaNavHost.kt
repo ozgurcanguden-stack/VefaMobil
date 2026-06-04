@@ -16,6 +16,7 @@ import androidx.navigation.navArgument
 import com.zgrcan.vefamobil.model.UserRole
 import com.zgrcan.vefamobil.presentation.AnnouncementViewModel
 import com.zgrcan.vefamobil.presentation.ExcelImportViewModel
+import com.zgrcan.vefamobil.presentation.ForcePasswordChangeViewModel
 import com.zgrcan.vefamobil.presentation.HouseholdViewModel
 import com.zgrcan.vefamobil.presentation.LoginViewModel
 import com.zgrcan.vefamobil.presentation.ManagerLoginTarget
@@ -54,6 +55,7 @@ fun VefaNavHost(
 ) {
     val loginViewModel: LoginViewModel = viewModel()
     val managerLoginViewModel: ManagerLoginViewModel = viewModel()
+    val forcePasswordChangeViewModel: ForcePasswordChangeViewModel = viewModel()
     val householdViewModel: HouseholdViewModel = viewModel()
     val personnelViewModel: PersonnelViewModel = viewModel()
     val taskViewModel: TaskViewModel = viewModel()
@@ -130,7 +132,17 @@ fun VefaNavHost(
         }
 
         composable(VefaDestination.ForcePasswordChange.route) {
+            val useFirebasePasswordChange = passwordChangeDestination != VefaDestination.PersonnelHome.route
+
             ForcePasswordChangeScreen(
+                state = forcePasswordChangeViewModel.state,
+                useFirebasePasswordChange = useFirebasePasswordChange,
+                onNewPasswordChange = forcePasswordChangeViewModel::onNewPasswordChange,
+                onConfirmPasswordChange = forcePasswordChangeViewModel::onConfirmPasswordChange,
+                onChangePasswordClick = forcePasswordChangeViewModel::changePassword,
+                onMockPasswordChangeClick = forcePasswordChangeViewModel::completeMockPasswordChange,
+                onErrorShown = forcePasswordChangeViewModel::clearError,
+                onSuccessShown = forcePasswordChangeViewModel::clearSuccess,
                 onPasswordChanged = {
                     val destination = passwordChangeDestination
                         ?: when (loginViewModel.currentUser?.role) {

@@ -5,40 +5,41 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import com.zgrcan.vefamobil.presentation.ForcePasswordChangeUiState
 import kotlinx.coroutines.delay
 
 @Composable
 fun ForcePasswordChangeScreen(
+    state: ForcePasswordChangeUiState,
+    useFirebasePasswordChange: Boolean,
+    onNewPasswordChange: (String) -> Unit,
+    onConfirmPasswordChange: (String) -> Unit,
+    onChangePasswordClick: () -> Unit,
+    onMockPasswordChangeClick: () -> Unit,
+    onErrorShown: () -> Unit,
+    onSuccessShown: () -> Unit,
     onPasswordChanged: () -> Unit,
 ) {
-    var newPassword by rememberSaveable { mutableStateOf("") }
-    var confirmPassword by rememberSaveable { mutableStateOf("") }
-    var errorMessage by rememberSaveable { mutableStateOf<String?>(null) }
-    var successMessage by rememberSaveable { mutableStateOf<String?>(null) }
-
-    LaunchedEffect(errorMessage) {
-        if (!errorMessage.isNullOrBlank()) {
+    LaunchedEffect(state.errorMessage) {
+        if (!state.errorMessage.isNullOrBlank()) {
             delay(2600)
-            errorMessage = null
+            onErrorShown()
         }
     }
 
-    LaunchedEffect(successMessage) {
-        if (!successMessage.isNullOrBlank()) {
+    LaunchedEffect(state.successMessage) {
+        if (!state.successMessage.isNullOrBlank()) {
             delay(2200)
-            successMessage = null
+            onSuccessShown()
             onPasswordChanged()
         }
     }
@@ -50,46 +51,53 @@ fun ForcePasswordChangeScreen(
         ) {
             OutlinedTextField(
                 modifier = Modifier.fillMaxWidth(),
-                value = newPassword,
-                onValueChange = { newPassword = it },
+                value = state.newPassword,
+                onValueChange = onNewPasswordChange,
                 label = { Text(text = "Yeni şifre") },
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                enabled = !state.isLoading,
                 singleLine = true,
             )
 
             OutlinedTextField(
                 modifier = Modifier.fillMaxWidth(),
-                value = confirmPassword,
-                onValueChange = { confirmPassword = it },
+                value = state.confirmPassword,
+                onValueChange = onConfirmPasswordChange,
                 label = { Text(text = "Yeni şifre tekrar") },
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                enabled = !state.isLoading,
                 singleLine = true,
             )
 
             Button(
                 modifier = Modifier.fillMaxWidth(),
+                enabled = !state.isLoading,
                 onClick = {
-                    if (newPassword != confirmPassword) {
-                        errorMessage = "Şifreler eşleşmiyor."
+                    if (useFirebasePasswordChange) {
+                        onChangePasswordClick()
                     } else {
-                        successMessage = "Şifreniz başarıyla değiştirilmiştir."
+                        onMockPasswordChangeClick()
                     }
                 },
             ) {
-                Text(text = "Kaydet")
+                if (state.isLoading) {
+                    CircularProgressIndicator()
+                } else {
+                    Text(text = "Şifreyi Değiştir")
+                }
             }
         }
 
         TopNotification(
-            message = errorMessage,
+            message = state.errorMessage,
             type = TopNotificationType.ERROR,
             modifier = Modifier.align(Alignment.TopCenter),
         )
 
         TopNotification(
-            message = successMessage,
+            message = state.successMessage,
             type = TopNotificationType.SUCCESS,
             modifier = Modifier.align(Alignment.TopCenter),
         )

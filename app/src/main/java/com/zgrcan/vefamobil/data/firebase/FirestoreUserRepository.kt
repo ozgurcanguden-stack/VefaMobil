@@ -1,8 +1,10 @@
 package com.zgrcan.vefamobil.data.firebase
 
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.zgrcan.vefamobil.model.AppUser
 import com.zgrcan.vefamobil.model.Organization
+import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 
@@ -74,6 +76,27 @@ class FirestoreUserRepository {
                     continuation.resume(null)
                 }
             }
+        }
+    }
+
+    suspend fun markPasswordChangeCompleted(uid: String): Result<Unit> {
+        val firestore = firestoreOrNull() ?: return Result.failure(
+            IllegalStateException("Firestore is not configured."),
+        )
+
+        return try {
+            firestore.collection(FirestoreCollections.USERS)
+                .document(uid)
+                .update(
+                    mapOf(
+                        "mustChangePassword" to false,
+                        "updatedAt" to FieldValue.serverTimestamp(),
+                    ),
+                )
+                .await()
+            Result.success(Unit)
+        } catch (exception: Exception) {
+            Result.failure(exception)
         }
     }
 

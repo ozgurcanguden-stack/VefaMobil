@@ -18,6 +18,10 @@ class FirebaseAuthRepositoryImpl(
         return authManager.currentUser()
     }
 
+    override suspend fun updatePassword(newPassword: String): Result<Unit> {
+        return authManager.updatePassword(newPassword)
+    }
+
     override fun isLoggedIn(): Boolean {
         return authManager.isLoggedIn()
     }

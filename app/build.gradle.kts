@@ -4,12 +4,22 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
+val hasGoogleServicesConfig = listOf(
+    file("google-services.json"),
+    file("src/debug/google-services.json"),
+    file("src/release/google-services.json"),
+).any { it.exists() }
+
+if (hasGoogleServicesConfig) {
+    apply(plugin = "com.google.gms.google-services")
+}
+
 android {
-    namespace = "com.vefamobil"
+    namespace = "com.zgrcan.vefamobil"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.vefamobil"
+        applicationId = "com.zgrcan.vefamobil"
         minSdk = 24
         targetSdk = 35
         versionCode = 1
@@ -32,19 +42,23 @@ android {
         isCoreLibraryDesugaringEnabled = true
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
-    }
-
     buildFeatures {
         compose = true
     }
 }
 
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+    }
+}
+
 dependencies {
     val composeBom = platform("androidx.compose:compose-bom:2024.12.01")
+    val firebaseBom = platform("com.google.firebase:firebase-bom:33.16.0")
 
     implementation(composeBom)
+    implementation(firebaseBom)
     androidTestImplementation(composeBom)
 
     implementation("androidx.activity:activity-compose:1.9.3")
@@ -53,6 +67,8 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.7")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
     implementation("androidx.navigation:navigation-compose:2.8.5")
+    implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.firebase:firebase-firestore")
     implementation("org.apache.poi:poi-ooxml:3.17") {
         exclude(group = "org.apache.xmlbeans", module = "xmlbeans")
     }

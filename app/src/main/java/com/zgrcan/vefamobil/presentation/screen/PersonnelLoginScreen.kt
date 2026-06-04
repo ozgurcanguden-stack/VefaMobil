@@ -15,6 +15,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
@@ -36,6 +37,7 @@ fun PersonnelLoginScreen(
     onPasswordChange: (String) -> Unit,
     onRememberMeChange: (Boolean) -> Unit,
     onChangeOrganizationClick: () -> Unit,
+    onChangeLoginTypeClick: () -> Unit,
     onLoginClick: () -> Unit,
     onLoginSuccess: (PersonnelLoginTarget) -> Unit,
     onErrorShown: () -> Unit,
@@ -161,6 +163,14 @@ fun PersonnelLoginScreen(
                         Text(text = "Giriş Yap")
                     }
                 }
+            }
+
+            TextButton(
+                modifier = Modifier.align(Alignment.CenterHorizontally),
+                onClick = onChangeLoginTypeClick,
+                enabled = !state.isLoading,
+            ) {
+                Text(text = "Giriş türünü değiştir")
             }
         }
 

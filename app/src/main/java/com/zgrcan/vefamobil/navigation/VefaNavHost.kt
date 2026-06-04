@@ -1,18 +1,28 @@
 package com.zgrcan.vefamobil.navigation
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.NavHostController
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.zgrcan.vefamobil.data.preferences.LastLoginType
+import com.zgrcan.vefamobil.data.preferences.LoginPreferencesManager
 import com.zgrcan.vefamobil.model.UserRole
 import com.zgrcan.vefamobil.presentation.AnnouncementViewModel
 import com.zgrcan.vefamobil.presentation.ExcelImportViewModel
@@ -50,11 +60,16 @@ import com.zgrcan.vefamobil.presentation.screen.TaskDetailScreen
 import com.zgrcan.vefamobil.presentation.screen.TaskFormScreen
 import com.zgrcan.vefamobil.presentation.screen.TasksScreen
 import com.zgrcan.vefamobil.presentation.screen.TrashScreen
+import kotlinx.coroutines.launch
 
 @Composable
 fun VefaNavHost(
     navController: NavHostController = rememberNavController(),
 ) {
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val loginPreferencesManager = remember(context) { LoginPreferencesManager(context) }
+    val lastLoginType by loginPreferencesManager.lastLoginType.collectAsState(initial = null)
     val loginViewModel: LoginViewModel = viewModel()
     val managerLoginViewModel: ManagerLoginViewModel = viewModel()
     val personnelLoginViewModel: PersonnelLoginViewModel = viewModel()
@@ -68,16 +83,90 @@ fun VefaNavHost(
     val trashAuditViewModel: TrashAuditViewModel = viewModel()
     val excelImportViewModel: ExcelImportViewModel = viewModel()
     var passwordChangeDestination by remember { mutableStateOf<String?>(null) }
+    var showManagerLogoutDialog by remember { mutableStateOf(false) }
+    var showPersonnelLogoutDialog by remember { mutableStateOf(false) }
+    val currentBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = currentBackStackEntry?.destination?.route
+
+    fun safePopBackStack() {
+        navController.popBackStack()
+    }
+
+    fun navigateToLoginSelection(clearLastLoginType: Boolean) {
+        if (clearLastLoginType) {
+            coroutineScope.launch {
+                loginPreferencesManager.setLastLoginType(LastLoginType.NONE)
+            }
+        }
+
+        navController.navigate(VefaDestination.LoginSelection.route) {
+            launchSingleTop = true
+            popUpTo(VefaDestination.LoginSelection.route) {
+                inclusive = false
+            }
+        }
+    }
+
+    fun navigateToLoginAfterLogout(route: String) {
+        val routeToPop = currentRoute
+        navController.navigate(route) {
+            launchSingleTop = true
+            if (routeToPop != null) {
+                popUpTo(routeToPop) {
+                    inclusive = true
+                }
+            }
+        }
+    }
+
+    BackHandler(enabled = true) {
+        when (currentRoute) {
+            VefaDestination.Splash.route,
+            VefaDestination.LoginSelection.route,
+            VefaDestination.ManagerLogin.route,
+            VefaDestination.PersonnelLogin.route,
+            VefaDestination.ForcePasswordChange.route
+            -> Unit
+
+            VefaDestination.ManagerHome.route -> {
+                showManagerLogoutDialog = true
+            }
+
+            VefaDestination.PersonnelHome.route -> {
+                showPersonnelLogoutDialog = true
+            }
+
+            else -> {
+                safePopBackStack()
+            }
+        }
+    }
 
     NavHost(
         navController = navController,
-        startDestination = VefaDestination.LoginSelection.route,
+        startDestination = VefaDestination.Splash.route,
     ) {
         composable(VefaDestination.Splash.route) {
             SplashScreen(
+                isReady = lastLoginType != null,
                 onFinished = {
+                    val destination = when (lastLoginType) {
+                        LastLoginType.MANAGER -> VefaDestination.ManagerLogin.route
+                        LastLoginType.PERSONNEL -> VefaDestination.PersonnelLogin.route
+                        LastLoginType.NONE,
+                        null
+                        -> VefaDestination.LoginSelection.route
+                    }
+
                     navController.navigate(VefaDestination.LoginSelection.route) {
+                        launchSingleTop = true
                         popUpTo(VefaDestination.Splash.route) { inclusive = true }
+                    }
+
+                    if (destination != VefaDestination.LoginSelection.route) {
+                        navController.navigate(destination) {
+                            launchSingleTop = true
+                        }
                     }
                 },
             )
@@ -85,20 +174,35 @@ fun VefaNavHost(
 
         composable(VefaDestination.LoginSelection.route) {
             LoginSelectionScreen(
-                onManagerLoginClick = { navController.navigate(VefaDestination.ManagerLogin.route) },
-                onPersonnelLoginClick = { navController.navigate(VefaDestination.PersonnelLogin.route) },
+                onManagerLoginClick = {
+                    coroutineScope.launch {
+                        loginPreferencesManager.setLastLoginType(LastLoginType.MANAGER)
+                    }
+                    navController.navigate(VefaDestination.ManagerLogin.route) {
+                        launchSingleTop = true
+                    }
+                },
+                onPersonnelLoginClick = {
+                    coroutineScope.launch {
+                        loginPreferencesManager.setLastLoginType(LastLoginType.PERSONNEL)
+                    }
+                    navController.navigate(VefaDestination.PersonnelLogin.route) {
+                        launchSingleTop = true
+                    }
+                },
             )
         }
 
         composable(VefaDestination.ManagerLogin.route) {
             ManagerLoginScreen(
                 state = managerLoginViewModel.state,
-                onBackClick = navController::popBackStack,
+                onBackClick = { navigateToLoginSelection(clearLastLoginType = false) },
                 onOrganizationCodeChange = managerLoginViewModel::onOrganizationCodeChange,
                 onEmailChange = managerLoginViewModel::onEmailChange,
                 onPasswordChange = managerLoginViewModel::onPasswordChange,
                 onRememberMeChange = managerLoginViewModel::onRememberMeChange,
                 onChangeOrganizationClick = managerLoginViewModel::clearSavedManagerLogin,
+                onChangeLoginTypeClick = { navigateToLoginSelection(clearLastLoginType = true) },
                 onLoginClick = managerLoginViewModel::login,
                 onLoginSuccess = { target ->
                     val destination = when (target) {
@@ -124,12 +228,13 @@ fun VefaNavHost(
         composable(VefaDestination.PersonnelLogin.route) {
             PersonnelLoginScreen(
                 state = personnelLoginViewModel.state,
-                onBackClick = navController::popBackStack,
+                onBackClick = { navigateToLoginSelection(clearLastLoginType = false) },
                 onOrganizationCodeChange = personnelLoginViewModel::onOrganizationCodeChange,
                 onEmailChange = personnelLoginViewModel::onEmailChange,
                 onPasswordChange = personnelLoginViewModel::onPasswordChange,
                 onRememberMeChange = personnelLoginViewModel::onRememberMeChange,
                 onChangeOrganizationClick = personnelLoginViewModel::clearSavedPersonnelLogin,
+                onChangeLoginTypeClick = { navigateToLoginSelection(clearLastLoginType = true) },
                 onLoginClick = personnelLoginViewModel::login,
                 onLoginSuccess = { target ->
                     val destination = when (target) {
@@ -167,7 +272,10 @@ fun VefaNavHost(
                         }
                     passwordChangeDestination = null
                     navController.navigate(destination) {
-                        popUpTo(VefaDestination.LoginSelection.route)
+                        launchSingleTop = true
+                        popUpTo(VefaDestination.ForcePasswordChange.route) {
+                            inclusive = true
+                        }
                     }
                 },
             )
@@ -186,6 +294,16 @@ fun VefaNavHost(
                 onTrashClick = { navController.navigate(VefaDestination.Trash.route) },
                 onAuditLogsClick = { navController.navigate(VefaDestination.AuditLogs.route) },
             )
+
+            LogoutConfirmDialog(
+                visible = showManagerLogoutDialog,
+                onDismiss = { showManagerLogoutDialog = false },
+                onConfirm = {
+                    showManagerLogoutDialog = false
+                    managerLoginViewModel.logout()
+                    navigateToLoginAfterLogout(VefaDestination.ManagerLogin.route)
+                },
+            )
         }
 
         composable(VefaDestination.PersonnelHome.route) {
@@ -194,6 +312,16 @@ fun VefaNavHost(
                     ?: loginViewModel.currentUser?.displayName.orEmpty(),
                 announcementState = announcementViewModel.state,
                 onAnnouncementRead = announcementViewModel::markAsRead,
+            )
+
+            LogoutConfirmDialog(
+                visible = showPersonnelLogoutDialog,
+                onDismiss = { showPersonnelLogoutDialog = false },
+                onConfirm = {
+                    showPersonnelLogoutDialog = false
+                    personnelLoginViewModel.logout()
+                    navigateToLoginAfterLogout(VefaDestination.PersonnelLogin.route)
+                },
             )
         }
 
@@ -432,4 +560,33 @@ fun VefaNavHost(
             )
         }
     }
+}
+
+@Composable
+private fun LogoutConfirmDialog(
+    visible: Boolean,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+) {
+    if (!visible) return
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(text = "Çıkış yapılsın mı?")
+        },
+        text = {
+            Text(text = "Oturumdan çıkmak istiyor musunuz?")
+        },
+        confirmButton = {
+            Button(onClick = onConfirm) {
+                Text(text = "Çıkış Yap")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(text = "İptal")
+            }
+        },
+    )
 }

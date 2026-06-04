@@ -25,6 +25,12 @@ data class PersonnelLoginPreferences(
     val email: String = "",
 )
 
+enum class LastLoginType {
+    MANAGER,
+    PERSONNEL,
+    NONE,
+}
+
 class LoginPreferencesManager(
     private val context: Context,
 ) {
@@ -43,6 +49,23 @@ class LoginPreferencesManager(
                     organizationCode = preferences[SAVED_MANAGER_ORG_CODE].orEmpty(),
                     email = preferences[SAVED_MANAGER_EMAIL].orEmpty(),
                 )
+            }
+
+    val lastLoginType: Flow<LastLoginType> =
+        context.loginPreferencesDataStore.data
+            .catch { exception ->
+                if (exception is IOException) {
+                    emit(emptyPreferences())
+                } else {
+                    throw exception
+                }
+            }
+            .map { preferences ->
+                when (preferences[LAST_LOGIN_TYPE]) {
+                    LastLoginType.MANAGER.name -> LastLoginType.MANAGER
+                    LastLoginType.PERSONNEL.name -> LastLoginType.PERSONNEL
+                    else -> LastLoginType.NONE
+                }
             }
 
     val personnelLoginPreferences: Flow<PersonnelLoginPreferences> =
@@ -100,6 +123,12 @@ class LoginPreferencesManager(
         }
     }
 
+    suspend fun setLastLoginType(lastLoginType: LastLoginType) {
+        context.loginPreferencesDataStore.edit { preferences ->
+            preferences[LAST_LOGIN_TYPE] = lastLoginType.name
+        }
+    }
+
     private companion object {
         val REMEMBER_MANAGER_LOGIN = booleanPreferencesKey("remember_manager_login")
         val SAVED_MANAGER_ORG_CODE = stringPreferencesKey("saved_manager_org_code")
@@ -107,5 +136,6 @@ class LoginPreferencesManager(
         val REMEMBER_PERSONNEL_LOGIN = booleanPreferencesKey("remember_personnel_login")
         val SAVED_PERSONNEL_ORG_CODE = stringPreferencesKey("saved_personnel_org_code")
         val SAVED_PERSONNEL_EMAIL = stringPreferencesKey("saved_personnel_email")
+        val LAST_LOGIN_TYPE = stringPreferencesKey("last_login_type")
     }
 }

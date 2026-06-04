@@ -28,7 +28,6 @@ data class PersonnelLoginUiState(
 )
 
 enum class PersonnelLoginTarget {
-    FORCE_PASSWORD_CHANGE,
     PERSONNEL_HOME,
 }
 
@@ -174,14 +173,10 @@ class PersonnelLoginViewModel(
                 password = "",
                 rememberMe = rememberMe,
                 isOrganizationCodeLocked = rememberMe && organizationCode.isNotBlank(),
-                isLoading = false,
+                isLoading = true,
                 errorMessage = null,
                 successMessage = "Giriş başarılı.",
-                successTarget = if (user.mustChangePassword) {
-                    PersonnelLoginTarget.FORCE_PASSWORD_CHANGE
-                } else {
-                    PersonnelLoginTarget.PERSONNEL_HOME
-                },
+                successTarget = PersonnelLoginTarget.PERSONNEL_HOME,
             )
         }
     }

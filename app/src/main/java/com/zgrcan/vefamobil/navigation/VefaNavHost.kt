@@ -110,7 +110,10 @@ fun VefaNavHost(
                     }
 
                     navController.navigate(destination) {
-                        popUpTo(VefaDestination.LoginSelection.route)
+                        launchSingleTop = true
+                        popUpTo(VefaDestination.LoginSelection.route) {
+                            inclusive = true
+                        }
                     }
                 },
                 onErrorShown = managerLoginViewModel::clearError,
@@ -130,15 +133,14 @@ fun VefaNavHost(
                 onLoginClick = personnelLoginViewModel::login,
                 onLoginSuccess = { target ->
                     val destination = when (target) {
-                        PersonnelLoginTarget.FORCE_PASSWORD_CHANGE -> {
-                            passwordChangeDestination = VefaDestination.PersonnelHome.route
-                            VefaDestination.ForcePasswordChange.route
-                        }
                         PersonnelLoginTarget.PERSONNEL_HOME -> VefaDestination.PersonnelHome.route
                     }
 
                     navController.navigate(destination) {
-                        popUpTo(VefaDestination.LoginSelection.route)
+                        launchSingleTop = true
+                        popUpTo(VefaDestination.LoginSelection.route) {
+                            inclusive = true
+                        }
                     }
                 },
                 onErrorShown = personnelLoginViewModel::clearError,

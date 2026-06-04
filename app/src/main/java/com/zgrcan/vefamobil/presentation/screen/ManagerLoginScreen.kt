@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
@@ -49,9 +50,9 @@ fun ManagerLoginScreen(
 
     LaunchedEffect(state.successTarget) {
         val target = state.successTarget ?: return@LaunchedEffect
-        delay(2200)
-        onSuccessShown()
+        delay(450)
         onLoginSuccess(target)
+        onSuccessShown()
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -146,7 +147,16 @@ fun ManagerLoginScreen(
                     enabled = !state.isLoading,
                 ) {
                     if (state.isLoading) {
-                        CircularProgressIndicator()
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(18.dp),
+                                strokeWidth = 2.dp,
+                            )
+                            Text(text = "Giriş yapılıyor...")
+                        }
                     } else {
                         Text(text = "Giriş Yap")
                     }

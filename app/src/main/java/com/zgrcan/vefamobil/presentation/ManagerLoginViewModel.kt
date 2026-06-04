@@ -174,7 +174,7 @@ class ManagerLoginViewModel(
                 password = "",
                 rememberMe = rememberMe,
                 isOrganizationCodeLocked = rememberMe && organizationCode.isNotBlank(),
-                isLoading = false,
+                isLoading = true,
                 errorMessage = null,
                 successMessage = "Giriş başarılı.",
                 successTarget = if (user.mustChangePassword) {

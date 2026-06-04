@@ -181,6 +181,35 @@ class PersonnelLoginViewModel(
         }
     }
 
+    suspend fun restoreSession(): PersonnelLoginTarget? {
+        if (!authRepository.isLoggedIn()) return null
+
+        val uid = authRepository.currentUser()?.uid
+        if (uid.isNullOrBlank()) return null
+
+        val user = userRepository.getUserProfile(uid) ?: run {
+            authRepository.logout()
+            return null
+        }
+
+        if (!user.role.equals("PERSONNEL", ignoreCase = true)) return null
+
+        if (!user.isActive) {
+            authRepository.logout()
+            return null
+        }
+
+        val organization = userRepository.getOrganization(user.organizationId)
+        if (organization == null || !organization.isActive) {
+            authRepository.logout()
+            return null
+        }
+
+        currentUser = user
+        currentOrganization = organization
+        return PersonnelLoginTarget.PERSONNEL_HOME
+    }
+
     fun logout() {
         authRepository.logout()
         currentUser = null

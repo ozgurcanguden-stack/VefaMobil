@@ -55,15 +55,15 @@ val VefaTypography = Typography(
     ),
     bodyLarge = BaseTypography.bodyLarge.copy(
         fontFamily = RedHatDisplayFontFamily,
-        fontWeight = FontWeight.Normal,
+        fontWeight = FontWeight.Medium,
     ),
     bodyMedium = BaseTypography.bodyMedium.copy(
         fontFamily = RedHatDisplayFontFamily,
-        fontWeight = FontWeight.Normal,
+        fontWeight = FontWeight.Medium,
     ),
     bodySmall = BaseTypography.bodySmall.copy(
         fontFamily = RedHatDisplayFontFamily,
-        fontWeight = FontWeight.Normal,
+        fontWeight = FontWeight.Medium,
     ),
     labelLarge = BaseTypography.labelLarge.copy(
         fontFamily = RedHatDisplayFontFamily,
@@ -71,10 +71,10 @@ val VefaTypography = Typography(
     ),
     labelMedium = BaseTypography.labelMedium.copy(
         fontFamily = RedHatDisplayFontFamily,
-        fontWeight = FontWeight.Medium,
+        fontWeight = FontWeight.SemiBold,
     ),
     labelSmall = BaseTypography.labelSmall.copy(
         fontFamily = RedHatDisplayFontFamily,
-        fontWeight = FontWeight.Medium,
+        fontWeight = FontWeight.SemiBold,
     ),
 )

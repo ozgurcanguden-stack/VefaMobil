@@ -84,6 +84,7 @@ fun VefaNavHost(
     val trashAuditViewModel: TrashAuditViewModel = viewModel()
     val excelImportViewModel: ExcelImportViewModel = viewModel()
     var passwordChangeDestination by remember { mutableStateOf<String?>(null) }
+    var splashDestination by remember { mutableStateOf<String?>(null) }
     var showManagerLogoutDialog by remember { mutableStateOf(false) }
     var showPersonnelLogoutDialog by remember { mutableStateOf(false) }
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
@@ -161,26 +162,40 @@ fun VefaNavHost(
         startDestination = VefaDestination.Splash.route,
     ) {
         composable(VefaDestination.Splash.route) {
-            SplashScreen(
-                isReady = lastLoginType != null,
-                onFinished = {
-                    val destination = when (lastLoginType) {
-                        LastLoginType.MANAGER -> VefaDestination.ManagerLogin.route
-                        LastLoginType.PERSONNEL -> VefaDestination.PersonnelLogin.route
-                        LastLoginType.NONE,
-                        null
-                        -> VefaDestination.LoginSelection.route
-                    }
+            LaunchedEffect(lastLoginType) {
+                if (lastLoginType == null) return@LaunchedEffect
 
-                    navController.navigate(VefaDestination.LoginSelection.route) {
+                val managerRestoreTarget = managerLoginViewModel.restoreSession()
+                val personnelRestoreTarget = if (managerRestoreTarget == null) {
+                    personnelLoginViewModel.restoreSession()
+                } else {
+                    null
+                }
+
+                splashDestination = when {
+                    managerRestoreTarget == ManagerLoginTarget.FORCE_PASSWORD_CHANGE -> {
+                        passwordChangeDestination = VefaDestination.ManagerHome.route
+                        VefaDestination.ForcePasswordChange.route
+                    }
+                    managerRestoreTarget == ManagerLoginTarget.MANAGER_HOME -> {
+                        VefaDestination.ManagerHome.route
+                    }
+                    personnelRestoreTarget == PersonnelLoginTarget.PERSONNEL_HOME -> {
+                        VefaDestination.PersonnelHome.route
+                    }
+                    lastLoginType == LastLoginType.MANAGER -> VefaDestination.ManagerLogin.route
+                    lastLoginType == LastLoginType.PERSONNEL -> VefaDestination.PersonnelLogin.route
+                    else -> VefaDestination.LoginSelection.route
+                }
+            }
+
+            SplashScreen(
+                isReady = lastLoginType != null && splashDestination != null,
+                onFinished = {
+                    val destination = splashDestination ?: VefaDestination.LoginSelection.route
+                    navController.navigate(destination) {
                         launchSingleTop = true
                         popUpTo(VefaDestination.Splash.route) { inclusive = true }
-                    }
-
-                    if (destination != VefaDestination.LoginSelection.route) {
-                        navController.navigate(destination) {
-                            launchSingleTop = true
-                        }
                     }
                 },
             )

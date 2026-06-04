@@ -3,14 +3,18 @@ package com.zgrcan.vefamobil.presentation.screen
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -58,7 +62,7 @@ fun HouseholdFormScreen(
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(
-                            imageVector = Icons.Outlined.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
                             contentDescription = "Geri",
                         )
                     }
@@ -76,6 +80,8 @@ fun HouseholdFormScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .imePadding()
+                .navigationBarsPadding()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -84,6 +90,7 @@ fun HouseholdFormScreen(
                 value = refCode,
                 onValueChange = { refCode = it },
                 label = "Ref Kodu",
+                keyboardType = KeyboardType.Number,
             )
             HouseholdTextField(
                 value = neighborhood,
@@ -97,20 +104,22 @@ fun HouseholdFormScreen(
             )
             HouseholdTextField(
                 value = tcNo,
-                onValueChange = { tcNo = it },
+                onValueChange = { value ->
+                    tcNo = value.filter { it.isDigit() }.take(11)
+                },
                 label = "TC",
                 keyboardType = KeyboardType.Number,
             )
             HouseholdTextField(
                 value = phone1,
                 onValueChange = { phone1 = it },
-                label = "Cep 1",
+                label = "Cep Telefonu",
                 keyboardType = KeyboardType.Phone,
             )
             HouseholdTextField(
                 value = phone2,
                 onValueChange = { phone2 = it },
-                label = "Cep 2",
+                label = "Cep Telefonu 2",
                 keyboardType = KeyboardType.Phone,
             )
             HouseholdTextField(
@@ -161,6 +170,8 @@ fun HouseholdFormScreen(
             ) {
                 Text(text = "Kaydet")
             }
+
+            Spacer(modifier = Modifier.height(96.dp))
         }
     }
 }

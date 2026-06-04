@@ -186,6 +186,39 @@ class ManagerLoginViewModel(
         }
     }
 
+    suspend fun restoreSession(): ManagerLoginTarget? {
+        if (!authRepository.isLoggedIn()) return null
+
+        val uid = authRepository.currentUser()?.uid
+        if (uid.isNullOrBlank()) return null
+
+        val user = userRepository.getUserProfile(uid) ?: run {
+            authRepository.logout()
+            return null
+        }
+
+        if (!user.role.equals("MANAGER", ignoreCase = true)) return null
+
+        if (!user.isActive) {
+            authRepository.logout()
+            return null
+        }
+
+        val organization = userRepository.getOrganization(user.organizationId)
+        if (organization == null || !organization.isActive) {
+            authRepository.logout()
+            return null
+        }
+
+        currentUser = user
+        currentOrganization = organization
+        return if (user.mustChangePassword) {
+            ManagerLoginTarget.FORCE_PASSWORD_CHANGE
+        } else {
+            ManagerLoginTarget.MANAGER_HOME
+        }
+    }
+
     fun logout() {
         authRepository.logout()
         currentUser = null

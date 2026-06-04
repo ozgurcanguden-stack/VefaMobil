@@ -1,12 +1,14 @@
 package com.zgrcan.vefamobil.presentation
 
+import android.app.Application
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.zgrcan.vefamobil.data.firebase.FirebaseAuthRepositoryImpl
 import com.zgrcan.vefamobil.data.firebase.FirestoreUserRepository
+import com.zgrcan.vefamobil.data.preferences.LoginPreferencesManager
 import com.zgrcan.vefamobil.model.AppUser
 import com.zgrcan.vefamobil.model.Organization
 import com.zgrcan.vefamobil.repository.FirebaseAuthRepository
@@ -14,8 +16,15 @@ import java.util.Locale
 import kotlinx.coroutines.launch
 
 data class ManagerLoginUiState(
+    val organizationCode: String = "",
+    val email: String = "",
+    val password: String = "",
+    val rememberMe: Boolean = false,
+    val isOrganizationCodeLocked: Boolean = false,
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
+    val successMessage: String? = null,
+    val successTarget: ManagerLoginTarget? = null,
 )
 
 enum class ManagerLoginTarget {
@@ -24,9 +33,12 @@ enum class ManagerLoginTarget {
 }
 
 class ManagerLoginViewModel(
-    private val authRepository: FirebaseAuthRepository = FirebaseAuthRepositoryImpl(),
-    private val userRepository: FirestoreUserRepository = FirestoreUserRepository(),
-) : ViewModel() {
+    application: Application,
+) : AndroidViewModel(application) {
+    private val authRepository: FirebaseAuthRepository = FirebaseAuthRepositoryImpl()
+    private val userRepository = FirestoreUserRepository()
+    private val loginPreferencesManager = LoginPreferencesManager(application.applicationContext)
+
     var state by mutableStateOf(ManagerLoginUiState())
         private set
 
@@ -36,24 +48,74 @@ class ManagerLoginViewModel(
     var currentOrganization: Organization? = null
         private set
 
-    fun login(
-        organizationCode: String,
-        email: String,
-        password: String,
-        onSuccess: (ManagerLoginTarget) -> Unit,
-    ) {
-        val trimmedEmail = email.trim()
-        if (trimmedEmail.isBlank() || password.isBlank()) {
+    init {
+        viewModelScope.launch {
+            loginPreferencesManager.managerLoginPreferences.collect { preferences ->
+                state = state.copy(
+                    organizationCode = if (preferences.rememberMe) preferences.organizationCode else state.organizationCode,
+                    email = if (preferences.rememberMe) preferences.email else state.email,
+                    rememberMe = preferences.rememberMe,
+                    isOrganizationCodeLocked = preferences.rememberMe && preferences.organizationCode.isNotBlank(),
+                )
+            }
+        }
+    }
+
+    fun onOrganizationCodeChange(value: String) {
+        if (!state.isOrganizationCodeLocked) {
+            state = state.copy(organizationCode = value)
+        }
+    }
+
+    fun onEmailChange(value: String) {
+        state = state.copy(email = value)
+    }
+
+    fun onPasswordChange(value: String) {
+        state = state.copy(password = value)
+    }
+
+    fun onRememberMeChange(rememberMe: Boolean) {
+        if (!state.isOrganizationCodeLocked) {
+            state = state.copy(rememberMe = rememberMe)
+        }
+    }
+
+    fun clearSavedManagerLogin() {
+        viewModelScope.launch {
+            loginPreferencesManager.clearManagerLogin()
+        }
+        state = state.copy(
+            organizationCode = "",
+            email = "",
+            password = "",
+            rememberMe = false,
+            isOrganizationCodeLocked = false,
+        )
+    }
+
+    fun login() {
+        val organizationCode = state.organizationCode.trim()
+        val email = state.email.trim()
+        val password = state.password
+        val rememberMe = state.rememberMe
+
+        if (email.isBlank() || password.isBlank()) {
             showError("Giriş başarısız. Bilgilerinizi kontrol ediniz.")
             return
         }
 
         viewModelScope.launch {
-            state = state.copy(isLoading = true, errorMessage = null)
+            state = state.copy(
+                isLoading = true,
+                errorMessage = null,
+                successMessage = null,
+                successTarget = null,
+            )
             currentUser = null
             currentOrganization = null
 
-            val authResult = authRepository.login(email = trimmedEmail, password = password)
+            val authResult = authRepository.login(email = email, password = password)
             if (authResult.isFailure) {
                 showError("Giriş başarısız. Bilgilerinizi kontrol ediniz.")
                 return@launch
@@ -97,16 +159,30 @@ class ManagerLoginViewModel(
                 return@launch
             }
 
+            if (rememberMe) {
+                loginPreferencesManager.saveManagerLogin(
+                    organizationCode = organizationCode,
+                    email = email,
+                )
+            } else {
+                loginPreferencesManager.clearManagerLogin()
+            }
+
             currentUser = user
             currentOrganization = organization
-            state = state.copy(isLoading = false, errorMessage = null)
-
-            val target = if (user.mustChangePassword) {
-                ManagerLoginTarget.FORCE_PASSWORD_CHANGE
-            } else {
-                ManagerLoginTarget.MANAGER_HOME
-            }
-            onSuccess(target)
+            state = state.copy(
+                password = "",
+                rememberMe = rememberMe,
+                isOrganizationCodeLocked = rememberMe && organizationCode.isNotBlank(),
+                isLoading = false,
+                errorMessage = null,
+                successMessage = "Giriş başarılı.",
+                successTarget = if (user.mustChangePassword) {
+                    ManagerLoginTarget.FORCE_PASSWORD_CHANGE
+                } else {
+                    ManagerLoginTarget.MANAGER_HOME
+                },
+            )
         }
     }
 
@@ -114,10 +190,15 @@ class ManagerLoginViewModel(
         authRepository.logout()
         currentUser = null
         currentOrganization = null
+        state = state.copy(password = "")
     }
 
     fun clearError() {
         state = state.copy(errorMessage = null)
+    }
+
+    fun clearSuccess() {
+        state = state.copy(successMessage = null, successTarget = null)
     }
 
     private fun failAfterAuthenticated(message: String) {
@@ -128,7 +209,12 @@ class ManagerLoginViewModel(
     }
 
     private fun showError(message: String) {
-        state = state.copy(isLoading = false, errorMessage = message)
+        state = state.copy(
+            isLoading = false,
+            errorMessage = message,
+            successMessage = null,
+            successTarget = null,
+        )
     }
 
     private fun normalizeOrganizationCode(value: String): String {

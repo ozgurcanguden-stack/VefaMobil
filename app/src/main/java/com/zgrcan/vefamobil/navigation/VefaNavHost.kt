@@ -89,26 +89,27 @@ fun VefaNavHost(
             ManagerLoginScreen(
                 state = managerLoginViewModel.state,
                 onBackClick = navController::popBackStack,
-                onLoginClick = { organizationCode, email, password ->
-                    managerLoginViewModel.login(
-                        organizationCode = organizationCode,
-                        email = email,
-                        password = password,
-                    ) { target ->
-                        val destination = when (target) {
-                            ManagerLoginTarget.FORCE_PASSWORD_CHANGE -> {
-                                passwordChangeDestination = VefaDestination.ManagerHome.route
-                                VefaDestination.ForcePasswordChange.route
-                            }
-                            ManagerLoginTarget.MANAGER_HOME -> VefaDestination.ManagerHome.route
+                onOrganizationCodeChange = managerLoginViewModel::onOrganizationCodeChange,
+                onEmailChange = managerLoginViewModel::onEmailChange,
+                onPasswordChange = managerLoginViewModel::onPasswordChange,
+                onRememberMeChange = managerLoginViewModel::onRememberMeChange,
+                onChangeOrganizationClick = managerLoginViewModel::clearSavedManagerLogin,
+                onLoginClick = managerLoginViewModel::login,
+                onLoginSuccess = { target ->
+                    val destination = when (target) {
+                        ManagerLoginTarget.FORCE_PASSWORD_CHANGE -> {
+                            passwordChangeDestination = VefaDestination.ManagerHome.route
+                            VefaDestination.ForcePasswordChange.route
                         }
+                        ManagerLoginTarget.MANAGER_HOME -> VefaDestination.ManagerHome.route
+                    }
 
-                        navController.navigate(destination) {
-                            popUpTo(VefaDestination.LoginSelection.route)
-                        }
+                    navController.navigate(destination) {
+                        popUpTo(VefaDestination.LoginSelection.route)
                     }
                 },
                 onErrorShown = managerLoginViewModel::clearError,
+                onSuccessShown = managerLoginViewModel::clearSuccess,
             )
         }
 

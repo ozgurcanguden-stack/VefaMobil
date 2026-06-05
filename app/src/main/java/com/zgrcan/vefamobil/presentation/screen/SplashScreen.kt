@@ -11,7 +11,7 @@ fun SplashScreen(
 ) {
     LaunchedEffect(isReady) {
         if (!isReady) return@LaunchedEffect
-        delay(600)
+        delay(1500)
         onFinished()
     }
 
